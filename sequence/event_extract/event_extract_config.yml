@@ -1,0 +1,65 @@
+# shared for multiple projects in this machine, raw data, read only
+
+home:
+  dir: 'D:\workspace'
+
+device: 'cpu'
+
+# Shared for multiple modules in the project
+project:
+  name: 'event_extract'
+  dir:
+    work: '{home.dir}//{project.name}'
+
+data:
+  name: 'xin_tong'
+  base_dir: '{home.dir}/data'
+  train_path: '{data.base_dir}/{data.name}/train.xlsx'
+  valid_path: '{data.base_dir}/{data.name}/valid.xlsx'
+  test_path: '{data.base_dir}/{data.name}/test.xlsx'
+
+  num_vocab: 20000
+  num_tag: 100
+  batch_size: 32
+
+  train_batch_size: 10
+  train_shuffle: True
+
+  test_batch_size: 64
+  test_shuffle: False
+
+# specified for specific module
+model:
+  name: 'xin_tong_model'
+  dim_embedding: 300
+  dim_hidden: 300
+  num_layer: 1
+  bidirectional: True
+  batch_first: False
+  nhead: 2
+  nhid: 200
+  nlayer: 1
+  is_ae: False
+
+loss:
+  alpha: 1.0
+  beta: 1.0e-3
+
+evaluation:
+  kind: seq
+  type: micro # macro
+  is_display: True
+
+learn:
+  dropout_rate: 0.1
+  learning_rate: 1.0e-4
+  weight_decay: 1.0e-5
+  batch_display: 20
+  episode: 100
+  dir:
+    work: "{project.dir.work}/{model.name}"
+    log: '{learn.dir.work}/log'
+    data: "{learn.dir.work}/data"
+    saved: '{learn.dir.work}/saved'
+    result: '{learn.dir.work}/result/result.xlsx'
+    summary: '{learn.dir.work}/summary'

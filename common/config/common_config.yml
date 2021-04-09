@@ -1,0 +1,18 @@
+home:
+  dir: '/home/zutnlp_research'
+  # default dir, windows dir: 'd:/'
+
+# Please set the GPU or CPU to be used for your model training in the LoadConfig object
+device: 'cuda:0' # default gpu
+
+# shared for multiple projects in this machine, raw data, read only
+data:
+  dir:
+    base: '/data'
+  batch_size: 64
+
+# Shared for multiple modules in the project
+project:
+  name: 'zutnlp_research'
+  dir:
+    work: "{home.dir}/workspace/{project.name}"

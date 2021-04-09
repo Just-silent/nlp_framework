@@ -1,0 +1,11 @@
+home:
+  dir: 'C:/Users/liuxiaoming'
+#  dir: '~/liuxiaoming'
+
+# Please set the GPU or CPU to be used for your model training in the LoadConfig object
+device: ~
+
+# shared for multiple projects in this machine, raw data, read only
+data:
+  # base: '/data'
+  base: 'd:/data'
