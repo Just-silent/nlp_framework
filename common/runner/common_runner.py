@@ -27,8 +27,6 @@ class CommonRunner(BaseRunner, ABC):
 
         self._config = None
         self._config_file = config_file
-        # self._build_common_config()
-        # self._config = None
 
         self._train_dataloader = None
         self._valid_dataloader = None

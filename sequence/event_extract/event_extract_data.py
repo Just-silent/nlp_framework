@@ -32,8 +32,8 @@ class SequenceDataLoader(CommonDataLoader):
         pass
 
     def __build_field(self):
-        self.TEXT = Field(sequential=True, use_vocab=True, tokenize=tokenizer, include_lengths=True)
-        self.TAG = Field(sequential=True, use_vocab=True, tokenize=tokenizer, is_target=True)
+        self.TEXT = Field(sequential=True, use_vocab=True, tokenize=tokenizer, include_lengths=True, batch_first=self._config.data.batch_first)
+        self.TAG = Field(sequential=True, use_vocab=True, tokenize=tokenizer, is_target=True, batch_first=self._config.data.batch_first)
         self._fields = [
             ('text', self.TEXT), ('tag', self.TAG)
         ]

@@ -25,7 +25,7 @@ class SequenceCRFLoss(CommonLoss):
         target_sequence = dict_outputs['target_sequence']
 
         loss_dict = dict()
-        loss_crf = dict_outputs['loss_crf']
+        loss_crf = dict_outputs['loss_batch']
         loss_batch = loss_crf
         loss_dict['loss_batch'] = loss_batch
 

@@ -13,6 +13,7 @@ class EEDataset(Dataset):
         examples = self._get_examples(path, fields, file)
         super(EEDataset, self).__init__(examples, fields, **kwargs)
 
+
     def _get_examples(self, path, fields, file):
         examples = []
         wb = load_workbook(path)

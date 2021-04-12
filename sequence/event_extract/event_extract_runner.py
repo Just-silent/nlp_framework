@@ -12,7 +12,7 @@ from tqdm import tqdm
 import torch.optim as optim
 from openpyxl import load_workbook
 
-from tensorboardX import SummaryWriter
+from torch.optim.lr_scheduler import StepLR
 
 from common.runner.common_runner import CommonRunner
 from sequence.event_extract.event_extract_config import EventExtractConfig
@@ -32,6 +32,7 @@ class FLAT_Runner(CommonRunner):
 
     def __init__(self, seq_config_file):
         super(FLAT_Runner, self).__init__(seq_config_file)
+        self._max_f1 = -1
         pass
 
 
@@ -71,7 +72,12 @@ class FLAT_Runner(CommonRunner):
 
 
     def _build_optimizer(self):
-        self._optimizer = optim.SGD(self._model.parameters(), lr=float(self._config.model.lr), momentum=self._config.model.momentum)
+        self._optimizer = optim.SGD(self._model.parameters(), lr=float(self._config.learn.learning_rate), momentum=self._config.learn.momentum)
+        self._scheduler = StepLR(self._optimizer, step_size=2000, gamma=0.1)
+
+
+    def _build_evaluator(self):
+        self._evaluator = EventExtractEvaluator(self._config, self.tag_vocab)
 
 
     def _valid(self, episode, valid_log_writer):
@@ -80,18 +86,14 @@ class FLAT_Runner(CommonRunner):
         self._model.eval()
         for dict_input in tqdm(self._valid_dataloader):
             dict_input.training = False
-            dict_outputs = self._model(dict_input, 0)
+            dict_outputs = self._model(dict_input)
             # self._display_output(dict_outputs['outputs'])
             dict_outputs['target_sequence'] = dict_input.tag
             # send batch pred and target
-            self._evaluator.evaluate(dict_outputs['outputs'], dict_outputs['target_sequence'],
-                                     dict_outputs['seq_len'])
+            self._evaluator.evaluate(dict_outputs['outputs'], dict_outputs['target_sequence'])
         # get the result
         f1 = self._evaluator.get_eval_output()
-        if self._max_f1 < f1:
-            self._max_f1 = f1
-            self._save_checkpoint(episode)
-            pass
+        return f1
         pass
 
 
@@ -103,8 +105,7 @@ class FLAT_Runner(CommonRunner):
             # self._display_output(dict_output)
             dict_outputs['target_sequence'] = dict_input.tag
             # send batch pred and target
-            self._evaluator.evaluate(dict_outputs['outputs'], dict_outputs['target_sequence'],
-                                     dict_outputs['seq_len'])
+            self._evaluator.evaluate(dict_outputs['outputs'], dict_outputs['target_sequence'])
         # get the result
         f1 = self._evaluator.get_eval_output()
         pass

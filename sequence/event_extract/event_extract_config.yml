@@ -21,6 +21,7 @@ data:
   num_vocab: 20000
   num_tag: 100
   batch_size: 32
+  batch_first: True
 
   train_batch_size: 10
   train_shuffle: True
@@ -36,10 +37,8 @@ model:
   num_layer: 1
   bidirectional: True
   batch_first: False
-  nhead: 2
-  nhid: 200
   nlayer: 1
-  is_ae: False
+  lr: 1.0e-4
 
 loss:
   alpha: 1.0
@@ -53,6 +52,7 @@ evaluation:
 learn:
   dropout_rate: 0.1
   learning_rate: 1.0e-4
+  momentum: 0.9
   weight_decay: 1.0e-5
   batch_display: 20
   episode: 100
