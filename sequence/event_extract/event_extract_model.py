@@ -30,9 +30,9 @@ class EventExteactModel(CommonModel):
 
     def forward(self, dict_inputs: dict) -> dict:
         dict_outputs = {}
-        dict_outputs['seq_len'] = dict_inputs.text[1]
-        text = dict_inputs.text[0]
-        tag = dict_inputs.tag
+        dict_outputs['seq_len'] = dict_inputs['text'][1]
+        text = dict_inputs['text'][0]
+        tag = dict_inputs['tag']
         text_embedding = self.embedding(text)
         encoded, _ = self.lstm_encoder(text_embedding)
         emissions = self.linner(encoded)

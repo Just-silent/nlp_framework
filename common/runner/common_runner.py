@@ -150,8 +150,10 @@ class CommonRunner(BaseRunner, ABC):
         epoch_start = time.time()
         self._model.train()
         for dict_input in tqdm(self._train_dataloader, desc="training"):
-
-            dict_output = self._model(dict_input)
+            input = {}
+            input['text'] = dict_input.text
+            input['tag'] = dict_input.tag
+            dict_output = self._model(input)
             dict_loss = self._loss(dict_output)
 
             # Backward and optimize

@@ -9,7 +9,7 @@ device: 'cpu'
 project:
   name: 'event_extract'
   dir:
-    work: '{home.dir}//{project.name}'
+    work: '{home.dir}\{project.name}'
 
 data:
   name: 'xintong'
@@ -26,7 +26,7 @@ data:
   train_batch_size: 10
   train_shuffle: True
 
-  test_batch_size: 64
+  test_batch_size: 10
   test_shuffle: False
 
 # specified for specific module
@@ -57,7 +57,7 @@ learn:
   batch_display: 20
   episode: 100
   dir:
-    work: "{project.dir.work}/{model.name}"
+    work: "{project.dir.work}//{model.name}"
     log: '{learn.dir.work}/log'
     data: "{learn.dir.work}/data"
     saved: '{learn.dir.work}/saved'

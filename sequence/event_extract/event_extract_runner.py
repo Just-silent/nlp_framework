@@ -14,6 +14,7 @@ from openpyxl import load_workbook
 
 from torch.optim.lr_scheduler import StepLR
 
+from sequence.event_extract.utils import Tool
 from common.runner.common_runner import CommonRunner
 from sequence.event_extract.event_extract_config import EventExtractConfig
 from sequence.event_extract.event_extract_data import SequenceDataLoader
@@ -33,6 +34,7 @@ class FLAT_Runner(CommonRunner):
     def __init__(self, seq_config_file):
         super(FLAT_Runner, self).__init__(seq_config_file)
         self._max_f1 = -1
+        self._tool = Tool()
         pass
 
 
@@ -86,7 +88,10 @@ class FLAT_Runner(CommonRunner):
         self._model.eval()
         for dict_input in tqdm(self._valid_dataloader):
             dict_input.training = False
-            dict_outputs = self._model(dict_input)
+            input = {}
+            input['text'] = dict_input.text
+            input['tag'] = dict_input.tag
+            dict_outputs = self._model(input)
             # self._display_output(dict_outputs['outputs'])
             dict_outputs['target_sequence'] = dict_input.tag
             # send batch pred and target
@@ -98,10 +103,13 @@ class FLAT_Runner(CommonRunner):
 
 
     def valid(self):
-        model = self._load_checkpoint()
+        self._load_checkpoint()
         self._model.eval()
         for dict_input in tqdm(self._valid_dataloader):
-            dict_outputs = self._model(dict_input)
+            input = {}
+            input['text'] = dict_input.text
+            input['tag'] = dict_input.tag
+            dict_outputs = self._model(input)
             # self._display_output(dict_output)
             dict_outputs['target_sequence'] = dict_input.tag
             # send batch pred and target
@@ -153,46 +161,38 @@ class FLAT_Runner(CommonRunner):
 
 
     def predict_test(self):
-        model = self._load_checkpoint()
+        self._load_checkpoint()
         self._model.eval()
         result_dict = {}
-        for dict_input in tqdm(self._test_dataloader):
-            ids = dict_input.id[0].to('cpu').tolist()
-            entities_batch = dict_input.entity.transpose(0,1)
-            dict_output = self._model(dict_input)
-            for i, (pred, entities) in enumerate(zip(dict_output['outputs'], entities_batch)):
-                result = {'origin_place':[],
-                          'size':[],
-                          'transfered_place':[]}
-                entities_str = [self.entity_vocab.itos[index] for index in entities]
-                pred_str = [self.tag_vocab.itos[index] for index in pred]
-                for j in range(len(pred)):
-                    if pred_str[j][2:] == 'origin_place':
-                        result['origin_place'].append(entities_str[j])
-                    elif pred_str[j][2:] == 'size':
-                        result['size'].append(entities_str[j])
-                    elif pred_str[j][2:] == 'transfered_place':
-                        result['transfered_place'].append(entities_str[j])
-                result_dict[ids[i]-1000] = result
-        wb =  load_workbook(self._config.data.test_path)
-        ws = wb['sheet1']
-        for line, id_result in result_dict.items():
-            ws.cell(line, 2, ','.join(id_result['origin_place']))
-            ws.cell(line, 3, ','.join(id_result['size']))
-            ws.cell(line, 4, ','.join(id_result['transfered_place']))
-        wb.save(self._config.data.result_path)
-            # self._display_output(dict_output)
-            # send batch pred and target
-            # self._metric.evaluate(dict_output['outputs'], dict_output['target_sequence'].T)
-        # get the result
-        # result = self._metric.get_eval_output()
+        while True:
+            print('请输入一段话：', end='')
+            text = input()
+            text_list = []
+            sentence = []
+            for c in text:
+                sentence.append(c)
+                if c in self.word_vocab.stoi.keys():
+                    text_list.append(self.word_vocab.stoi[c])
+                else:
+                    text_list.append(0)
+            text = torch.IntTensor(text_list, device=torch.device(self._config.device))
+            text_len = torch.IntTensor([len(text_list)], device=torch.device(self._config.device))
+            text = text.repeat(self._config.data.train_batch_size, 1)
+            text_len = text_len.repeat(self._config.data.train_batch_size, 1)
+            dict_input = {}
+            dict_input['text'] = [text, text_len]
+            dict_input['tag'] = None
+            pred_tags = [self.tag_vocab.itos[index] for index in self._model(dict_input)['outputs'][0]]
+            pred_words = self._tool.get_result_by_sentence_tag(sentence, pred_tags)
+            print(pred_words)
 
 
 if __name__ == '__main__':
     config_file = 'event_extract_config.yml'
 
     runner = FLAT_Runner(config_file)
-    runner.train()
+    # runner.train()
     runner.valid()
+    # runner.test()
     runner.predict_test()
     pass

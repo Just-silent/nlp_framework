@@ -5,11 +5,14 @@
 from openpyxl import load_workbook
 from torchtext.data import Dataset, Example
 
+from sequence.event_extract.utils import Tool
+
 
 class EEDataset(Dataset):
 
     def __init__(self, path, fields, file, config, **kwargs):
         self._config = config
+        self._tool = Tool()
         examples = self._get_examples(path, fields, file)
         super(EEDataset, self).__init__(examples, fields, **kwargs)
 
@@ -27,15 +30,7 @@ class EEDataset(Dataset):
             text = ws.cell(index_row, text_col).value
             text_list = [c for c in text]
             words = ws.cell(index_row, tag_col).value.split()
-            tag_list = ['O']*len(text_list)
-            for word in words:
-                s = text.find(word)
-                e = s + len(word)
-                tag_list[s] = 'B'
-                s+=1
-                while s<e:
-                    tag_list[s] = 'I'
-                    s+=1
+            tag_list = self._tool.get_tags(text, words)
             index_row+=1
             examples.append(Example.fromlist([text_list, tag_list], fields))
         return examples
