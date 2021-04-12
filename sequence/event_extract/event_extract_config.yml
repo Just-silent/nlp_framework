@@ -12,11 +12,11 @@ project:
     work: '{home.dir}//{project.name}'
 
 data:
-  name: 'xin_tong'
-  base_dir: '{home.dir}/data'
-  train_path: '{data.base_dir}/{data.name}/train.xlsx'
-  valid_path: '{data.base_dir}/{data.name}/valid.xlsx'
-  test_path: '{data.base_dir}/{data.name}/test.xlsx'
+  name: 'xintong'
+  base_dir: '{home.dir}\data'
+  train_path: '{data.base_dir}\{data.name}\train.xlsx'
+  valid_path: '{data.base_dir}\{data.name}\valid.xlsx'
+  test_path: '{data.base_dir}\{data.name}\test.xlsx'
 
   num_vocab: 20000
   num_tag: 100

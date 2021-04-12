@@ -8,8 +8,7 @@ from torchtext.vocab import Vectors
 from transformers import BertConfig, BertTokenizer, BertModel
 
 from common.util.utils import timeit
-from sequence.ccks_ee.utils import Tool
-from sequence.ccks_ee.ccks_ee_dataset import EEDataset
+from sequence.event_extract.event_extract_dataset import EEDataset
 from common.data.common_data_loader import CommonDataLoader
 
 
@@ -43,11 +42,15 @@ class SequenceDataLoader(CommonDataLoader):
     @timeit
     def _load_data(self):
         self.train_data = EEDataset(
-            path=self._config.data.train_path, fields=self._fields_train_valid,
-            file='train', tree=self._entities_tree, config=self._config
+            path=self._config.data.train_path, fields=self._fields,
+            file='train', config=self._config
         )
-        self.__build_vocab(self.train_data, self.valid_data, self.test_data)
-        self.__build_iterator(self.train_data, self.valid_data, self.test_data)
+        self.valid_data = EEDataset(
+            path=self._config.data.valid_path, fields=self._fields,
+            file='valid', config=self._config
+        )
+        self.__build_vocab(self.train_data, self.valid_data)
+        self.__build_iterator(self.train_data, self.valid_data)
         pass
 
     def __build_vocab(self, *dataset):
@@ -55,62 +58,37 @@ class SequenceDataLoader(CommonDataLoader):
         :param dataset: train_data, valid_data, test_data
         :return: text_vocab, tag_vocab
         """
-        if self._config.model.is_ae:
-            self.TEXT.build_vocab(*dataset)
-            # tokenizer = BertTokenizer.from_pretrained(self._config.data.bert_vocab_path)
-            # vec = Vectors(name=self._config.data.bert_vocab_path)
-            # self.TEXT.build_vocab(*dataset,
-            #                  max_size=3000,
-            #                  min_freq=1,
-            #                  vectors=vec,  # vects替换为None则不使用词向量
-            #                  unk_init=torch.Tensor.normal_)
-            self.word_vocab = self.TEXT.vocab
-        else:
-            self.TEXT.build_vocab(*dataset)
-            self.TAG.build_vocab(*dataset[:-1])
-            self.word_vocab = self.TEXT.vocab
-            self.entity_vocab = self.ENTITY.vocab
-            self.tag_vocab = self.TAG.vocab
+        self.TEXT.build_vocab(*dataset)
+        self.TAG.build_vocab(*dataset)
+        self.word_vocab = self.TEXT.vocab
+        self.tag_vocab = self.TAG.vocab
         pass
 
     def __build_iterator(self, *dataset):
-        if self._config.model.is_ae:
-            self._ae_iter = BucketIterator(
-                dataset[0], batch_size=self._config.data.train_batch_size, shuffle=False,
-                sort_key=lambda x: len(x.text), sort_within_batch=True, device=self._config.device)
-        else:
-            self._train_iter = BucketIterator(
-                dataset[0], batch_size=self._config.data.train_batch_size, shuffle=True,
-                sort_key=lambda x: len(x.text), sort_within_batch=True, device=self._config.device)
-
-            self._valid_iter = BucketIterator(
-                dataset[1], batch_size=self._config.data.train_batch_size, shuffle=False,
-                sort_key=lambda x: len(x.text), sort_within_batch=True, device=self._config.device)
-
-            self._test_iter = BucketIterator(
-                dataset[2], batch_size=self._config.data.train_batch_size, shuffle=False,
-                sort_key=lambda x: len(x.text), sort_within_batch=True, device=self._config.device)
+        self._train_iter = BucketIterator(
+            dataset[0], batch_size=self._config.data.train_batch_size, shuffle=True,
+            sort_key=lambda x: len(x.text), sort_within_batch=True, device=self._config.device)
+        self._valid_iter = BucketIterator(
+            dataset[1], batch_size=self._config.data.train_batch_size, shuffle=False,
+            sort_key=lambda x: len(x.text), sort_within_batch=True, device=self._config.device)
         pass
 
     def load_train(self):
         return self._train_iter
         pass
 
+    def load_test(self):
+        pass
+
+
     def load_valid(self):
         return self._valid_iter
         pass
 
-    def load_test(self):
-        return self._test_iter
-        pass
-
-    def load_ae(self):
-        return self._ae_iter
-        pass
 
 
 if __name__ == '__main__':
-    config_file = 'seq_config.yml'
+    config_file = 'event_extract_config.yml'
     import dynamic_yaml
 
     # Device

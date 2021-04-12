@@ -8,10 +8,10 @@ from sklearn.metrics import classification_report, f1_score
 from common.evaluation.common_sequence_evaluator import CommonSeqEvaluator
 
 
-class CCKS_Evaluator(CommonSeqEvaluator):
+class EventExtractEvaluator(CommonSeqEvaluator):
 
     def __init__(self, config, tag_vocab):
-        super(CCKS_Evaluator, self).__init__()
+        super(EventExtractEvaluator, self).__init__()
         self._tag_vocab = tag_vocab
         self._average_type = config.evaluation.type
         self._labels = list(tag_vocab.stoi.keys())[3:]

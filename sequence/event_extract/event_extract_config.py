@@ -20,3 +20,9 @@ class EventExtractConfig(CommonConfig):
         self._config.update(config)
         return self._config
         pass
+
+
+if __name__ == '__main__':
+    config_file = 'event_extract_config.yml'
+    ee_config = EventExtractConfig(config_file)
+    config = ee_config.load_config()
