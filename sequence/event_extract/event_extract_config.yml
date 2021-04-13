@@ -12,7 +12,7 @@ project:
     work: '{home.dir}\{project.name}'
 
 pretrained_models:
-  name: 'bert-base-chinese'
+  name: 'bert_base_chinese'
   dir: '{home.dir}\common\pretrained_models\{pretrained_models.name}'
   is_use: True
 

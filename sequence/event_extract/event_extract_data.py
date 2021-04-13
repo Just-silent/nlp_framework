@@ -59,7 +59,8 @@ class SequenceDataLoader(CommonDataLoader):
         :return: text_vocab, tag_vocab
         """
         if self._config.pretrained_models.is_use:
-            vec = Vectors(self._config.data.vocab_path)
+            print(self._config.data.vocab_path)
+            vec = Vectors(self._config.data.vocab_path, max_vectors=10000)
             self.TEXT.build_vocab(*dataset,
                 max_size=3000,
                 min_freq=1,
