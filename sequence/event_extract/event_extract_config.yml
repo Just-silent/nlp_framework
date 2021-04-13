@@ -11,12 +11,19 @@ project:
   dir:
     work: '{home.dir}\{project.name}'
 
+pretrained_models:
+  name: 'bert-base-chinese'
+  dir: '{home.dir}\common\pretrained_models\{pretrained_models.name}'
+  is_use: True
+
 data:
   name: 'xintong'
   base_dir: '{home.dir}\data'
   train_path: '{data.base_dir}\{data.name}\train.xlsx'
   valid_path: '{data.base_dir}\{data.name}\valid.xlsx'
   test_path: '{data.base_dir}\{data.name}\test.xlsx'
+
+  vocab_path: '{pretrained_models.dir}\vocab.txt'
 
   num_vocab: 20000
   num_tag: 100
@@ -39,6 +46,7 @@ model:
   batch_first: False
   nlayer: 1
   lr: 1.0e-4
+  is_pretrained_model: True
 
 loss:
   alpha: 1.0

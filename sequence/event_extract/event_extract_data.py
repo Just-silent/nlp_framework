@@ -58,7 +58,16 @@ class SequenceDataLoader(CommonDataLoader):
         :param dataset: train_data, valid_data, test_data
         :return: text_vocab, tag_vocab
         """
-        self.TEXT.build_vocab(*dataset)
+        if self._config.pretrained_models.is_use:
+            vec = Vectors(self._config.data.vocab_path)
+            self.TEXT.build_vocab(*dataset,
+                max_size=3000,
+                min_freq=1,
+                vectors=vec,  # vects替换为None则不使用词向量
+                unk_init=torch.Tensor.normal_
+            )
+        else:
+            self.TEXT.build_vocab(*dataset)
         self.TAG.build_vocab(*dataset)
         self.word_vocab = self.TEXT.vocab
         self.tag_vocab = self.TAG.vocab
