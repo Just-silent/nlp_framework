@@ -8,8 +8,8 @@ from torchtext.vocab import Vectors, Vocab
 from transformers import BertConfig, BertTokenizer, BertModel
 
 from common.util.utils import timeit
-from sequence.event_extract.utils import Tool
-from sequence.event_extract.event_extract_dataset import EEDataset
+from sequence.bert_demo.utils import Tool
+from sequence.bert_demo.event_extract_dataset import EEDataset
 from common.data.common_data_loader import CommonDataLoader
 
 
@@ -51,8 +51,12 @@ class SequenceDataLoader(CommonDataLoader):
             path=self._config.data.valid_path, fields=self._fields,
             file='valid', config=self._config
         )
-        self.__build_vocab(self.train_data, self.valid_data)
-        self.__build_iterator(self.train_data, self.valid_data)
+        self.test_data = EEDataset(
+            path=self._config.data.valid_path, fields=self._fields,
+            file='valid', config=self._config
+        )
+        self.__build_vocab(self.train_data, self.valid_data, self.test_data)
+        self.__build_iterator(self.train_data, self.valid_data, self.test_data)
         pass
 
     def __build_vocab(self, *dataset):
@@ -82,6 +86,9 @@ class SequenceDataLoader(CommonDataLoader):
         self._valid_iter = BucketIterator(
             dataset[1], batch_size=self._config.data.train_batch_size, shuffle=False,
             sort_key=lambda x: len(x.text), sort_within_batch=True, device=self._config.device)
+        self._test_iter = BucketIterator(
+            dataset[2], batch_size=self._config.data.train_batch_size, shuffle=False,
+            sort_key=lambda x: len(x.text), sort_within_batch=True, device=self._config.device)
         pass
 
     def load_train(self):
@@ -89,6 +96,7 @@ class SequenceDataLoader(CommonDataLoader):
         pass
 
     def load_test(self):
+        return self._test_iter
         pass
 
 

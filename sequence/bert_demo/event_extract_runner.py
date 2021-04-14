@@ -14,13 +14,13 @@ from openpyxl import load_workbook
 
 from torch.optim.lr_scheduler import StepLR
 
-from sequence.event_extract.utils import Tool
+from sequence.bert_demo.utils import Tool
 from common.runner.common_runner import CommonRunner
-from sequence.event_extract.event_extract_config import EventExtractConfig
-from sequence.event_extract.event_extract_data import SequenceDataLoader
-from sequence.event_extract.event_extract_evaluator import EventExtractEvaluator
-from sequence.event_extract.event_extract_model import EventExteactModel
-from sequence.event_extract.event_extract_loss import SequenceCRFLoss
+from sequence.bert_demo.event_extract_config import EventExtractConfig
+from sequence.bert_demo.event_extract_data import SequenceDataLoader
+from sequence.bert_demo.event_extract_evaluator import EventExtractEvaluator
+from sequence.bert_demo.event_extract_model import EventExteactModel
+from sequence.bert_demo.event_extract_loss import SequenceCRFLoss
 
 RANDOM_SEED = 2020
 
