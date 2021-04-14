@@ -14,7 +14,7 @@ project:
 pretrained_models:
   name: 'bert_base_chinese'
   dir: '{home.dir}\common\pretrained_models\{pretrained_models.name}'
-  is_use: True
+  is_use: False
 
 data:
   name: 'xintong'

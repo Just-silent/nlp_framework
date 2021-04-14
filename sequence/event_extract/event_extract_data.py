@@ -4,10 +4,11 @@
 
 import torch
 from torchtext.data import Field, BucketIterator
-from torchtext.vocab import Vectors
+from torchtext.vocab import Vectors, Vocab
 from transformers import BertConfig, BertTokenizer, BertModel
 
 from common.util.utils import timeit
+from sequence.event_extract.utils import Tool
 from sequence.event_extract.event_extract_dataset import EEDataset
 from common.data.common_data_loader import CommonDataLoader
 
@@ -27,13 +28,14 @@ class SequenceDataLoader(CommonDataLoader):
     def __init__(self, data_config):
         super(SequenceDataLoader, self).__init__(data_config)
         self._config = data_config
+        self._tool = Tool()
         self.__build_field()
         self._load_data()
         pass
 
     def __build_field(self):
-        self.TEXT = Field(sequential=True, use_vocab=True, tokenize=tokenizer, include_lengths=True, batch_first=self._config.data.batch_first)
-        self.TAG = Field(sequential=True, use_vocab=True, tokenize=tokenizer, is_target=True, batch_first=self._config.data.batch_first)
+        self.TEXT = Field(sequential=False, use_vocab=True, tokenize=tokenizer, include_lengths=True, batch_first=self._config.data.batch_first, pad_token='[PAD]', unk_token='[UNK]')
+        self.TAG = Field(sequential=False, use_vocab=True, tokenize=tokenizer, is_target=True, batch_first=self._config.data.batch_first, pad_token='[PAD]', unk_token='[UNK]')
         self._fields = [
             ('text', self.TEXT), ('tag', self.TAG)
         ]
@@ -59,13 +61,12 @@ class SequenceDataLoader(CommonDataLoader):
         :return: text_vocab, tag_vocab
         """
         if self._config.pretrained_models.is_use:
-            print(self._config.data.vocab_path)
-            vec = Vectors(self._config.data.vocab_path, max_vectors=10000)
-            self.TEXT.build_vocab(*dataset,
-                max_size=3000,
+            vocabs = self._tool.get_vocab_list(self._config.data.vocab_path)
+            v = Vocab(vocabs, specials=['[PAD]', '[UNK]'])
+            self.TEXT.build_vocab(vocabs,
+                max_size=30000,
                 min_freq=1,
-                vectors=vec,  # vects替换为None则不使用词向量
-                unk_init=torch.Tensor.normal_
+                vectors=None,  # vects替换为None则不使用词向量
             )
         else:
             self.TEXT.build_vocab(*dataset)

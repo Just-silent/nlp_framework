@@ -51,3 +51,19 @@ class Tool():
             i+=1
         return result
         pass
+
+
+    def get_vocab_list(self, path):
+        '''
+        Args:
+            path : the path of the vocab
+        Returns:
+            the list of all vocabs
+        '''
+        vocabs = {}
+        vocab_file = open(path, 'r', encoding='utf-8')
+        i = 1
+        for line in vocab_file.readlines():
+            vocabs[line.strip()] = i
+            i+=1
+        return vocabs
