@@ -10,6 +10,7 @@ project:
   name: 'event_extract'
   dir:
     work: '{home.dir}\{project.name}'
+  seed: 19980603
 
 pretrained_models:
   name: 'bert_base_chinese'
@@ -17,13 +18,20 @@ pretrained_models:
   is_use: False
 
 data:
-  name: 'xintong'
+  name: 'msra'
   base_dir: '{home.dir}\data'
-  train_path: '{data.base_dir}\{data.name}\train.xlsx'
-  valid_path: '{data.base_dir}\{data.name}\valid.xlsx'
-  test_path: '{data.base_dir}\{data.name}\test.xlsx'
+  train_path: '{data.base_dir}\{data.name}\train_bio.conll'
+  valid_path: '{data.base_dir}\{data.name}\test_bio.conll'
+  test_path: '{data.base_dir}\{data.name}\test_bio.conll'
 
   vocab_path: '{pretrained_models.dir}\vocab.txt'
+
+  max_len: 512
+
+  shuffle: True
+
+  token_pad_idx: 1
+  tag_pad_idx: 1
 
   num_vocab: 20000
   num_tag: 100
@@ -40,12 +48,13 @@ data:
 model:
   name: 'xin_tong_model'
   dim_embedding: 300
-  dim_hidden: 300
+  dim_hidden: 768
   num_layer: 1
   bidirectional: True
   batch_first: False
   nlayer: 1
   lr: 1.0e-4
+  hidden_dropout_prob: 0.5
   is_pretrained_model: True
 
 loss:

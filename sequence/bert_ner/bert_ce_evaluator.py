@@ -10,11 +10,12 @@ from common.evaluation.common_sequence_evaluator import CommonSeqEvaluator
 
 class EventExtractEvaluator(CommonSeqEvaluator):
 
-    def __init__(self, config, tag_vocab):
+    def __init__(self, config, idx2tag):
         super(EventExtractEvaluator, self).__init__()
-        self._tag_vocab = tag_vocab
+        self.idx2tag = idx2tag
         self._average_type = config.evaluation.type
-        self._labels = list(tag_vocab.stoi.keys())[3:]
+        self._labels = list(idx2tag.values())
+        self._labels.remove('O')
         self._pred_list = []
         self._true_list = []
 
@@ -24,10 +25,10 @@ class EventExtractEvaluator(CommonSeqEvaluator):
         lens = []
         for pred in preds:
             lens.append(len(pred))
-            pred_list.extend([self._tag_vocab.itos[index] for index in pred])
+            pred_list.extend([self.idx2tag[index.item()] for index in pred])
         for i, target in enumerate(targets):
             target = target[:lens[i]]
-            target_list.extend([self._tag_vocab.itos[index] for index in target])
+            target_list.extend([self.idx2tag[index.item()] for index in target])
         return pred_list, target_list
 
     def evaluate(self, pred, target):
@@ -37,7 +38,7 @@ class EventExtractEvaluator(CommonSeqEvaluator):
         self._true_list.extend(target)
 
     def get_eval_output(self):
-        result = classification_report(self._pred_list, self._true_list, labels=self._labels, digits=3, output_dict=False)
-        f1 = f1_score(self._pred_list, self._true_list, labels=self._labels, average='micro')
+        result = classification_report(self._true_list, self._pred_list, labels=self._labels, digits=3, output_dict=False)
+        f1 = f1_score(self._true_list, self._pred_list, labels=self._labels, average='micro')
         print(result)
         return f1

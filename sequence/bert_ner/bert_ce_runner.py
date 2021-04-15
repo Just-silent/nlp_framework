@@ -14,13 +14,13 @@ from openpyxl import load_workbook
 
 from torch.optim.lr_scheduler import StepLR
 
-from sequence.bert_demo.utils import Tool
-from common.runner.common_runner import CommonRunner
-from sequence.bert_demo.event_extract_config import EventExtractConfig
-from sequence.bert_demo.event_extract_data import SequenceDataLoader
-from sequence.bert_demo.event_extract_evaluator import EventExtractEvaluator
-from sequence.bert_demo.event_extract_model import EventExteactModel
-from sequence.bert_demo.event_extract_loss import SequenceCRFLoss
+from sequence.bert_ner.utils import Tool
+from common.runner.bert_common_runner import BertCommonRunner
+from sequence.bert_ner.bert_ce_config import BertConfig
+from sequence.bert_ner.bert_ce_data import BertDataLoader
+from sequence.bert_ner.bert_ce_evaluator import EventExtractEvaluator
+from sequence.bert_ner.bert_ce_model import BertForSequenceTagging
+from sequence.bert_ner.bert_ce_loss import SequenceCRFLoss
 
 RANDOM_SEED = 2020
 
@@ -29,42 +29,40 @@ torch.manual_seed(RANDOM_SEED)
 
 warnings.filterwarnings("ignore")
 
-class FLAT_Runner(CommonRunner):
+class Bert_Runner(BertCommonRunner):
 
     def __init__(self, seq_config_file):
-        super(FLAT_Runner, self).__init__(seq_config_file)
+        super(Bert_Runner, self).__init__(seq_config_file)
         self._max_f1 = -1
         self._tool = Tool()
         pass
 
 
     def _build_config(self):
-        flat_config = EventExtractConfig(self._config_file)
-        self._config = flat_config.load_config()
+        bert_config = BertConfig(self._config_file)
+        self._config = bert_config.load_config()
         pass
 
 
     def _build_data(self):
-        self._dataloader = SequenceDataLoader(self._config)
+        self.dataloader = BertDataLoader(self._config)
 
-        self.word_vocab = self._dataloader.word_vocab
-        self.tag_vocab = self._dataloader.tag_vocab
-        self._config.model.ntag = len(self.tag_vocab.itos)
+        self.tag2idx = self.dataloader.tag2idx
+        self.idx2tag = self.dataloader.idx2tag
 
-        self._config.data.num_vocab = len(self.word_vocab.itos)
-        self._config.data.num_tag = len(self.tag_vocab.itos)
+        self._config.model.ntag = len(self.idx2tag)
 
-        self._train_dataloader = self._dataloader.load_train()
-        self._valid_dataloader = self._dataloader.load_valid()
 
-        train_max_len = max([len(example.tag) for example in self._train_dataloader.dataset.examples])
-        valid_max_len = max([len(example.tag) for example in self._valid_dataloader.dataset.examples])
-        self.max_seq_len = max(train_max_len, valid_max_len)
+        self.train_data = self.dataloader.load_train()
+        self.valid_data = self.dataloader.load_valid()
+        self.test_data = self.dataloader.load_test()
+
+        self.max_seq_len = self._config.data.max_len
         pass
 
 
     def _build_model(self):
-        self._model = EventExteactModel(self._config)
+        self._model = BertForSequenceTagging.from_pretrained(self._config.pretrained_models.dir, num_labels=self._config.model.ntag)
         pass
 
 
@@ -74,26 +72,31 @@ class FLAT_Runner(CommonRunner):
 
 
     def _build_optimizer(self):
-        self._optimizer = optim.SGD(self._model.parameters(), lr=float(self._config.learn.learning_rate), momentum=self._config.learn.momentum)
+        self._optimizer = optim.AdamW(self._model.parameters(), lr=float(self._config.learn.learning_rate))
         self._scheduler = StepLR(self._optimizer, step_size=2000, gamma=0.1)
 
 
     def _build_evaluator(self):
-        self._evaluator = EventExtractEvaluator(self._config, self.tag_vocab)
+        self._evaluator = EventExtractEvaluator(self._config, self.idx2tag)
 
 
     def _valid(self, episode, valid_log_writer):
         print("begin validating epoch {}...".format(episode + 1))
         # switch to evaluate mode
         self._model.eval()
-        for dict_input in tqdm(self._valid_dataloader):
-            dict_input.training = False
+        valid_data_iterator = self.dataloader.data_iterator(self.valid_data)
+        steps = self.valid_data['size'] // self._config.data.train_batch_size//30
+        for i in tqdm(range(steps)):
+            batch_data, batch_token_starts, batch_tags = next(valid_data_iterator)
+            batch_masks = batch_data.gt(0)
             input = {}
-            input['text'] = dict_input.text
-            input['tag'] = dict_input.tag
+            input['input_ids'] = batch_data
+            input['labels'] = batch_tags
+            input['attention_mask'] = batch_masks
+            input['input_token_starts'] = batch_token_starts
             dict_outputs = self._model(input)
             # self._display_output(dict_outputs['outputs'])
-            dict_outputs['target_sequence'] = dict_input.tag
+            dict_outputs['target_sequence'] = batch_tags
             # send batch pred and target
             self._evaluator.evaluate(dict_outputs['outputs'], dict_outputs['target_sequence'])
         # get the result
@@ -188,9 +191,9 @@ class FLAT_Runner(CommonRunner):
 
 
 if __name__ == '__main__':
-    config_file = 'event_extract_config.yml'
+    config_file = 'bert_ce_config.yml'
 
-    runner = FLAT_Runner(config_file)
+    runner = Bert_Runner(config_file)
     runner.train()
     runner.valid()
     runner.test()
