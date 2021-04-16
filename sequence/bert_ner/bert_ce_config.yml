@@ -7,7 +7,7 @@ device: 'cpu'
 
 # Shared for multiple modules in the project
 project:
-  name: 'event_extract'
+  name: 'bert_ner'
   dir:
     work: '{home.dir}\{project.name}'
   seed: 19980603
@@ -38,7 +38,7 @@ data:
   batch_size: 32
   batch_first: True
 
-  train_batch_size: 10
+  train_batch_size: 64
   train_shuffle: True
 
   test_batch_size: 10

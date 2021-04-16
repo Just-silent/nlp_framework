@@ -6,10 +6,8 @@
 
 
 class Tool():
-
     def __init__(self):
         pass
-
 
     def get_tags(self, text, words):
         '''
@@ -29,7 +27,6 @@ class Tool():
                 tag_list[s] = 'I'
                 s += 1
         return tag_list
-
 
     def get_result_by_sentence_tag(self, chars, tags):
         '''
@@ -51,7 +48,6 @@ class Tool():
             i+=1
         return result
         pass
-
 
     def get_vocab_list(self, path):
         '''

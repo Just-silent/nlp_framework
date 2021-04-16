@@ -8,7 +8,6 @@ import pkg_resources
 from common.config.common_config import CommonConfig
 
 class EventExtractConfig(CommonConfig):
-
     def __init__(self, config_file):
         super(EventExtractConfig, self).__init__()
         self._config_file = config_file

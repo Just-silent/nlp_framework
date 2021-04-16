@@ -9,13 +9,11 @@ from sequence.event_extract.utils import Tool
 
 
 class EEDataset(Dataset):
-
     def __init__(self, path, fields, file, config, **kwargs):
         self._config = config
         self._tool = Tool()
         examples = self._get_examples(path, fields, file)
         super(EEDataset, self).__init__(examples, fields, **kwargs)
-
 
     def _get_examples(self, path, fields, file):
         examples = []

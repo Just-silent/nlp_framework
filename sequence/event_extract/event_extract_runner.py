@@ -30,19 +30,16 @@ torch.manual_seed(RANDOM_SEED)
 warnings.filterwarnings("ignore")
 
 class FLAT_Runner(CommonRunner):
-
     def __init__(self, seq_config_file):
         super(FLAT_Runner, self).__init__(seq_config_file)
         self._max_f1 = -1
         self._tool = Tool()
         pass
 
-
     def _build_config(self):
         flat_config = EventExtractConfig(self._config_file)
         self._config = flat_config.load_config()
         pass
-
 
     def _build_data(self):
         self._dataloader = SequenceDataLoader(self._config)
@@ -62,25 +59,20 @@ class FLAT_Runner(CommonRunner):
         self.max_seq_len = max(train_max_len, valid_max_len)
         pass
 
-
     def _build_model(self):
         self._model = EventExteactModel(self._config)
         pass
-
 
     def _build_loss(self):
         self._loss = SequenceCRFLoss(self._config).to(self._config.device)
         pass
 
-
     def _build_optimizer(self):
         self._optimizer = optim.SGD(self._model.parameters(), lr=float(self._config.learn.learning_rate), momentum=self._config.learn.momentum)
         self._scheduler = StepLR(self._optimizer, step_size=2000, gamma=0.1)
 
-
     def _build_evaluator(self):
         self._evaluator = EventExtractEvaluator(self._config, self.tag_vocab)
-
 
     def _valid(self, episode, valid_log_writer):
         print("begin validating epoch {}...".format(episode + 1))
@@ -101,7 +93,6 @@ class FLAT_Runner(CommonRunner):
         return f1
         pass
 
-
     def valid(self):
         self._load_checkpoint()
         self._model.eval()
@@ -117,7 +108,6 @@ class FLAT_Runner(CommonRunner):
         # get the result
         f1 = self._evaluator.get_eval_output()
         pass
-
 
     def _display_output(self, dict_outputs):
         batch_data = dict_outputs['batch_data']
@@ -142,7 +132,6 @@ class FLAT_Runner(CommonRunner):
             print(this_result + '\n')
         pass
 
-
     def test(self):
         model = self._load_checkpoint()
         self._model.eval()
@@ -155,10 +144,8 @@ class FLAT_Runner(CommonRunner):
         # get the result
         f1 = self._evaluator.get_eval_output()
 
-
     def _display_result(self, episode):
         pass
-
 
     def predict_test(self):
         self._load_checkpoint()

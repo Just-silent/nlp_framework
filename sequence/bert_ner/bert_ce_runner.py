@@ -13,7 +13,7 @@ import torch.optim as optim
 from openpyxl import load_workbook
 
 from torch.optim.lr_scheduler import StepLR
-
+from common.util.utils import timeit
 from sequence.bert_ner.utils import Tool
 from common.runner.bert_common_runner import BertCommonRunner
 from sequence.bert_ner.bert_ce_config import BertConfig
@@ -37,13 +37,13 @@ class Bert_Runner(BertCommonRunner):
         self._tool = Tool()
         pass
 
-
+    @timeit
     def _build_config(self):
         bert_config = BertConfig(self._config_file)
         self._config = bert_config.load_config()
         pass
 
-
+    @timeit
     def _build_data(self):
         self.dataloader = BertDataLoader(self._config)
 
@@ -52,7 +52,6 @@ class Bert_Runner(BertCommonRunner):
 
         self._config.model.ntag = len(self.idx2tag)
 
-
         self.train_data = self.dataloader.load_train()
         self.valid_data = self.dataloader.load_valid()
         self.test_data = self.dataloader.load_test()
@@ -60,32 +59,31 @@ class Bert_Runner(BertCommonRunner):
         self.max_seq_len = self._config.data.max_len
         pass
 
-
+    @timeit
     def _build_model(self):
         self._model = BertForSequenceTagging.from_pretrained(self._config.pretrained_models.dir, num_labels=self._config.model.ntag)
         pass
 
-
+    @timeit
     def _build_loss(self):
         self._loss = SequenceCRFLoss(self._config).to(self._config.device)
         pass
 
-
+    @timeit
     def _build_optimizer(self):
         self._optimizer = optim.AdamW(self._model.parameters(), lr=float(self._config.learn.learning_rate))
         self._scheduler = StepLR(self._optimizer, step_size=2000, gamma=0.1)
 
-
+    @timeit
     def _build_evaluator(self):
         self._evaluator = EventExtractEvaluator(self._config, self.idx2tag)
-
 
     def _valid(self, episode, valid_log_writer):
         print("begin validating epoch {}...".format(episode + 1))
         # switch to evaluate mode
         self._model.eval()
         valid_data_iterator = self.dataloader.data_iterator(self.valid_data)
-        steps = self.valid_data['size'] // self._config.data.train_batch_size//30
+        steps = self.valid_data['size'] // self._config.data.train_batch_size//20
         for i in tqdm(range(steps)):
             batch_data, batch_token_starts, batch_tags = next(valid_data_iterator)
             batch_masks = batch_data.gt(0)
@@ -104,7 +102,6 @@ class Bert_Runner(BertCommonRunner):
         return f1
         pass
 
-
     def valid(self):
         self._load_checkpoint()
         self._model.eval()
@@ -120,7 +117,6 @@ class Bert_Runner(BertCommonRunner):
         # get the result
         f1 = self._evaluator.get_eval_output()
         pass
-
 
     def _display_output(self, dict_outputs):
         batch_data = dict_outputs['batch_data']
@@ -145,7 +141,6 @@ class Bert_Runner(BertCommonRunner):
             print(this_result + '\n')
         pass
 
-
     def test(self):
         model = self._load_checkpoint()
         self._model.eval()
@@ -158,10 +153,8 @@ class Bert_Runner(BertCommonRunner):
         # get the result
         f1 = self._evaluator.get_eval_output()
 
-
     def _display_result(self, episode):
         pass
-
 
     def predict_test(self):
         self._load_checkpoint()

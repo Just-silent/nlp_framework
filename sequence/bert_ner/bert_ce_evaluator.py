@@ -9,7 +9,6 @@ from common.evaluation.common_sequence_evaluator import CommonSeqEvaluator
 
 
 class EventExtractEvaluator(CommonSeqEvaluator):
-
     def __init__(self, config, idx2tag):
         super(EventExtractEvaluator, self).__init__()
         self.idx2tag = idx2tag
@@ -41,4 +40,6 @@ class EventExtractEvaluator(CommonSeqEvaluator):
         result = classification_report(self._true_list, self._pred_list, labels=self._labels, digits=3, output_dict=False)
         f1 = f1_score(self._true_list, self._pred_list, labels=self._labels, average='micro')
         print(result)
+        self._pred_list = []
+        self._true_list = []
         return f1

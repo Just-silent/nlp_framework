@@ -32,10 +32,9 @@ class BertDataLoader(object):
         self.valid_data = {}
         self.test_data = {}
 
-        # self.load_data(config.data.train_path, self.train_data)
+        self.load_data(config.data.train_path, self.train_data)
         self.load_data(config.data.valid_path, self.valid_data)
-        # self.load_data(config.data.test_path, self.test_data)
-
+        self.load_data(config.data.test_path, self.test_data)
 
     def load_tags(self):
         tags = []
@@ -44,7 +43,6 @@ class BertDataLoader(object):
                 if line!='\n':
                     tags.append(line.strip().split()[1])
         return list(set(tags))
-
 
     def load_sentences_tags(self, path, data):
         """
@@ -82,7 +80,6 @@ class BertDataLoader(object):
         data['data'] = sentences
         data['size'] = len(sentences)
 
-
     def load_data(self, path , data):
         """Loads the data for each type in types from data_dir.
 
@@ -92,7 +89,6 @@ class BertDataLoader(object):
             data: (dict) contains the data with tags for each type in types.
         """
         self.load_sentences_tags(path, data)
-
 
     def data_iterator(self, data):
         """Returns a generator that yields batches data with tags.
@@ -179,14 +175,11 @@ class BertDataLoader(object):
             else:
                 yield batch_data, batch_token_starts
 
-
     def load_train(self):
         return self.train_data
 
-
     def load_valid(self):
         return self.valid_data
-
 
     def load_test(self):
         return self.test_data

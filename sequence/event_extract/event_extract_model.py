@@ -17,7 +17,6 @@ torch.manual_seed(RANDOM_SEED)
 
 
 class EventExteactModel(CommonModel):
-
     def __init__(self, seq_config_file):
         super(EventExteactModel, self).__init__(seq_config_file)
         self._config = seq_config_file
@@ -26,7 +25,6 @@ class EventExteactModel(CommonModel):
                                     num_layers=self._config.model.num_layer, bidirectional=self._config.model.bidirectional)
         self.crflayer = CRF(self._config.data.num_tag, batch_first=self._config.data.batch_first)
         self.linner = nn.Linear(self._config.model.dim_hidden, self._config.data.num_tag)
-
 
     def forward(self, dict_inputs: dict) -> dict:
         dict_outputs = {}

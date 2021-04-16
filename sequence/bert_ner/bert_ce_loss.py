@@ -33,6 +33,7 @@ class SequenceCRFLoss(CommonLoss):
 
         return loss_dict
 
+
 class SequenceMSELoss(CommonLoss):
     def __init__(self, config):
         super(SequenceMSELoss, self).__init__(config)

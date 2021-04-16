@@ -24,7 +24,6 @@ UNK_TAG = "<PAD>"
 
 
 class SequenceDataLoader(CommonDataLoader):
-
     def __init__(self, data_config):
         super(SequenceDataLoader, self).__init__(data_config)
         self._config = data_config
@@ -90,7 +89,6 @@ class SequenceDataLoader(CommonDataLoader):
 
     def load_test(self):
         pass
-
 
     def load_valid(self):
         return self._valid_iter

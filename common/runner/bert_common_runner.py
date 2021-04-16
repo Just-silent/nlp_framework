@@ -21,7 +21,6 @@ class BertCommonRunner(BaseRunner, ABC):
     """
     common implementation for runner
     """
-
     def __init__(self, config_file):
         super(BaseRunner, self).__init__()
 
@@ -57,7 +56,6 @@ class BertCommonRunner(BaseRunner, ABC):
         self._model_path = os.path.join(
             dir_saved, str(self._config.model.name + '.ckp'))
 
-    @timeit
     def _build(self):
         self._build_config()
         self._build_data()
@@ -147,10 +145,10 @@ class BertCommonRunner(BaseRunner, ABC):
         pass
 
     def _train_epoch(self, episode):
-        train_data_iterator = self.dataloader.data_iterator(self.valid_data)
+        train_data_iterator = self.dataloader.data_iterator(self.train_data)
         epoch_start = time.time()
         self._model.train()
-        steps = self.valid_data['size']//self._config.data.train_batch_size//30
+        steps = self.train_data['size']//self._config.data.train_batch_size//100
         for i in tqdm(range(steps)):
             batch_data, batch_token_starts, batch_tags = next(train_data_iterator)
             batch_masks = batch_data.gt(0)
