@@ -71,7 +71,20 @@ class Bert_Runner(BertCommonRunner):
 
     @timeit
     def _build_optimizer(self):
-        self._optimizer = optim.AdamW(self._model.parameters(), lr=float(self._config.learn.learning_rate))
+        optimizer_grouped_parameters = []
+        if self._config.pretrained_models.full_finetuning:
+            param_optimizer = list(self._model.named_parameters())
+            no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
+            optimizer_grouped_parameters = [
+                {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
+                 'weight_decay': self._config.learn.weight_decay},
+                {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
+                 'weight_decay': 0.0}
+            ]
+        else:
+            param_optimizer = list(self._model.classifier.named_parameters())
+            optimizer_grouped_parameters = [{'params': [p for n, p in param_optimizer]}]
+        self._optimizer = optim.AdamW(optimizer_grouped_parameters, lr=float(self._config.learn.learning_rate))
         self._scheduler = StepLR(self._optimizer, step_size=2000, gamma=0.1)
 
     @timeit
@@ -83,7 +96,7 @@ class Bert_Runner(BertCommonRunner):
         # switch to evaluate mode
         self._model.eval()
         valid_data_iterator = self.dataloader.data_iterator(self.valid_data)
-        steps = self.valid_data['size'] // self._config.data.train_batch_size//20
+        steps = self.valid_data['size'] // self._config.data.batch_size//20
         for i in tqdm(range(steps)):
             batch_data, batch_token_starts, batch_tags = next(valid_data_iterator)
             batch_masks = batch_data.gt(0)
@@ -173,8 +186,8 @@ class Bert_Runner(BertCommonRunner):
                     text_list.append(0)
             text = torch.IntTensor(text_list, device=torch.device(self._config.device))
             text_len = torch.IntTensor([len(text_list)], device=torch.device(self._config.device))
-            text = text.repeat(self._config.data.train_batch_size, 1)
-            text_len = text_len.repeat(self._config.data.train_batch_size, 1)
+            text = text.repeat(self._config.data.batch_size, 1)
+            text_len = text_len.repeat(self._config.data.batch_size, 1)
             dict_input = {}
             dict_input['text'] = [text, text_len]
             dict_input['tag'] = None

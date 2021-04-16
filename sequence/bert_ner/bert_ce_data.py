@@ -14,7 +14,7 @@ class BertDataLoader(object):
     def __init__(self, config):
         # , data_dir, bert_class, params, token_pad_idx=0, tag_pad_idx=-1
         self._config = config
-        self.batch_size = config.data.train_batch_size
+        self.batch_size = config.data.batch_size
         self.max_len = config.data.max_len
         self.token_pad_idx = config.data.token_pad_idx
         self.tag_pad_idx = config.data.tag_pad_idx

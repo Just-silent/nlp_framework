@@ -65,6 +65,7 @@ def timeit(f):
         result = f(*args, **kw)
         te = time.time()
         print('......finish    {0:8s}, took:{1:.4f} sec......'.format(f.__name__, te - ts))
+        print()
         return result
 
     return timed

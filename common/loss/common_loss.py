@@ -18,3 +18,19 @@ class CommonLoss(BaseLoss, ABC):
     @abstractmethod
     def forward(self, dict_outputs: dict) -> dict:
         pass
+
+
+class CELoss():
+    def __init__(self):
+        pass
+
+    def forward(self):
+        pass
+
+
+class DiceLoss():
+    def __init__(self):
+        pass
+
+    def forward(self):
+        pass

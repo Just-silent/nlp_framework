@@ -37,3 +37,27 @@ class CommonSeqEvaluator(BaseSeqEvaluator):
     def _write_csv(self, List : list):
         # write the result to csv
         pass
+
+
+class LabelPRF1(CommonSeqEvaluator):
+    def __init__(self):
+        super(LabelPRF1, self).__init__()
+        pass
+
+    def evaluate(self, pred, target):
+        pass
+
+    def get_eval_output(self):
+        pass
+
+
+class SpanPRF1(CommonSeqEvaluator):
+    def __init__(self):
+        super(SpanPRF1, self).__init__()
+        pass
+
+    def evaluate(self, pred, target):
+        pass
+
+    def get_eval_output(self):
+        pass
