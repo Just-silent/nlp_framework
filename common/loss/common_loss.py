@@ -9,7 +9,6 @@ from base.loss.base_loss import BaseLoss
 
 
 class CommonLoss(BaseLoss, ABC):
-
     def __init__(self, loss_config):
         super(CommonLoss, self).__init__(loss_config)
         self._config = loss_config
