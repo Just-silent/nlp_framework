@@ -31,8 +31,8 @@ data:
 
   shuffle: True
 
-  token_pad_idx: 1
-  tag_pad_idx: 1
+  token_pad_idx: 0
+  tag_pad_idx: 0
 
   num_vocab: 20000
   num_tag: 100

@@ -61,7 +61,7 @@ class Bert_Runner(BertCommonRunner):
 
     @timeit
     def _build_model(self):
-        self._model = BertForSequenceTagging.from_pretrained(self._config.pretrained_models.dir, num_labels=self._config.model.ntag)
+        self._model = BertForSequenceTagging.from_pretrained(self._config.pretrained_models.dir, num_labels=self._config.model.ntag).to(self._config.device)
         pass
 
     @timeit

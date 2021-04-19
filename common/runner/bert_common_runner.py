@@ -148,7 +148,7 @@ class BertCommonRunner(BaseRunner, ABC):
         train_data_iterator = self.dataloader.data_iterator(self.train_data)
         epoch_start = time.time()
         self._model.train()
-        steps = self.train_data['size']//self._config.data.train_batch_size//100
+        steps = self.train_data['size']//self._config.data.batch_size//100
         for i in tqdm(range(steps)):
             batch_data, batch_token_starts, batch_tags = next(train_data_iterator)
             batch_masks = batch_data.gt(0)
@@ -173,7 +173,7 @@ class BertCommonRunner(BaseRunner, ABC):
                 elapsed = time.time() - epoch_start
                 print(self._train_fmt.format(
                     episode + 1, self.global_step,
-                    self._config.data.train_batch_size,
+                    self._config.data.batch_size,
                     batch_loss.item(), elapsed
                 ))
                 epoch_start = time.time()
