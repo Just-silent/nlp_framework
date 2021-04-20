@@ -15,7 +15,7 @@ class BertForSequenceTagging(BertPreTrainedModel):
 		self.dropout = nn.Dropout(config.hidden_dropout_prob)
 		self.classifier = nn.Linear(config.hidden_size, config.num_labels)
 
-		self.init_weights()
+		# self.init_weights()
 
 	def forward(self, input):
 		input_ids = input['input_ids']
@@ -61,4 +61,5 @@ class BertForSequenceTagging(BertPreTrainedModel):
 		outputs['loss_batch'] = loss
 		outputs['emissions'] = logits
 		outputs['outputs'] = torch.argmax(logits, dim=-1)
+		outputs['mask'] = input_token_starts
 		return outputs  # (loss), scores

@@ -96,7 +96,7 @@ class Bert_Runner(BertCommonRunner):
         # switch to evaluate mode
         self._model.eval()
         valid_data_iterator = self.dataloader.data_iterator(self.valid_data)
-        steps = self.valid_data['size'] // self._config.data.batch_size//20
+        steps = self.valid_data['size'] // self._config.data.batch_size
         for i in tqdm(range(steps)):
             batch_data, batch_token_starts, batch_tags = next(valid_data_iterator)
             batch_masks = batch_data.gt(0)

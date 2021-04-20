@@ -1,33 +1,31 @@
 # shared for multiple projects in this machine, raw data, read only
 
 home:
-  dir: 'D://workspace'
-#  dir: '//home//admin//jupyter//workspace'
+  dir: '/home/admin/jupyter/workspace'
 
-device: 'cpu'
-#device: 'cuda:0'
+device: 'cuda:0'
 
 # Shared for multiple modules in the project
 project:
   name: 'bert_ner'
   dir:
-    work: '{home.dir}//{project.name}'
+    work: '{home.dir}/{project.name}'
   seed: 19980603
 
 pretrained_models:
-  name: 'chinese'
-  dir: '{home.dir}//common//pretrained_models//{pretrained_models.name}'
+  name: 'bert_base_chinese'
+  dir: '{home.dir}/common/pretrained_models/{pretrained_models.name}'
   full_finetuning: True
   is_use: False
 
 data:
   name: 'msra'
-  base_dir: '{home.dir}//data'
-  train_path: '{data.base_dir}//{data.name}//train_bio.conll'
-  valid_path: '{data.base_dir}//{data.name}//test_bio.conll'
-  test_path: '{data.base_dir}//{data.name}//test_bio.conll'
+  base_dir: '{home.dir}/data'
+  train_path: '{data.base_dir}/{data.name}/train_bio.conll'
+  valid_path: '{data.base_dir}/{data.name}/test_bio.conll'
+  test_path: '{data.base_dir}/{data.name}/test_bio.conll'
 
-  vocab_path: '{pretrained_models.dir}//vocab.txt'
+  vocab_path: '{pretrained_models.dir}/vocab.txt'
 
   max_len: 512
 
@@ -37,8 +35,8 @@ data:
   tag_pad_idx: 0
 
   num_vocab: 20000
-  num_tag: 8
-  batch_size: 32
+  num_tag: 100
+  batch_size: 8
   batch_first: True
 
   train_shuffle: True
@@ -72,12 +70,12 @@ learn:
   learning_rate: 1.0e-4
   momentum: 0.9
   weight_decay: 1.0e-2
-  batch_display: 20
+  batch_display: 50
   episode: 100
   dir:
-    work: "{project.dir.work}////{model.name}"
-    log: '{learn.dir.work}//log'
-    data: "{learn.dir.work}//data"
-    saved: '{learn.dir.work}//saved'
-    result: '{learn.dir.work}//result//result.xlsx'
-    summary: '{learn.dir.work}//summary'
+    work: "{project.dir.work}//{model.name}"
+    log: '{learn.dir.work}/log'
+    data: "{learn.dir.work}/data"
+    saved: '{learn.dir.work}/saved'
+    result: '{learn.dir.work}/result/result.xlsx'
+    summary: '{learn.dir.work}/summary'

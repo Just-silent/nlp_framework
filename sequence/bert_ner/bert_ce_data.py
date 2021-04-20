@@ -42,7 +42,11 @@ class BertDataLoader(object):
             for line in file.readlines():
                 if line!='\n':
                     tags.append(line.strip().split()[1])
-        return list(set(tags))
+        result = ['PAD']
+        for tag in list(set(tags)):
+            result.append(tag)
+        return result
+        # return list(set(tags))
 
     def load_sentences_tags(self, path, data):
         """

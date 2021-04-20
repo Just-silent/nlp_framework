@@ -15,6 +15,7 @@ class EventExtractEvaluator(CommonSeqEvaluator):
         self._average_type = config.evaluation.type
         self._labels = list(idx2tag.values())
         self._labels.remove('O')
+        self._labels.remove('PAD')
         self._pred_list = []
         self._true_list = []
 
@@ -22,12 +23,18 @@ class EventExtractEvaluator(CommonSeqEvaluator):
         pred_list = []
         target_list = []
         lens = []
-        for pred in preds:
-            lens.append(len(pred))
+        for target in targets:
+            target1 = []
+            for tag in target:
+                if tag==0:
+                    break
+                else:
+                    target1.append(tag)
+            lens.append(len(target1))
+            target_list.extend([self.idx2tag[index.item()] for index in target1])
+        for i, pred in enumerate(preds):
+            pred = pred[:lens[i]]
             pred_list.extend([self.idx2tag[index.item()] for index in pred])
-        for i, target in enumerate(targets):
-            target = target[:lens[i]]
-            target_list.extend([self.idx2tag[index.item()] for index in target])
         return pred_list, target_list
 
     def evaluate(self, pred, target):
