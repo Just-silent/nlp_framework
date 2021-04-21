@@ -58,7 +58,7 @@ class BertForSequenceTagging(BertPreTrainedModel):
 				loss = loss_fct(active_logits, active_labels)
 			else:
 				loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-		outputs['loss_batch'] = loss
+			outputs['loss_batch'] = loss
 		outputs['emissions'] = logits
 		outputs['outputs'] = torch.argmax(logits, dim=-1)
 		outputs['mask'] = input_token_starts

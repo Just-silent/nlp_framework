@@ -5,16 +5,16 @@
 # IDE       :PyCharm
 
 
-import random
 import torch
+import random
 import warnings
-from tqdm import tqdm
+import numpy as np
 import torch.optim as optim
-from openpyxl import load_workbook
 
-from torch.optim.lr_scheduler import StepLR
+from tqdm import tqdm
 from common.util.utils import timeit
 from sequence.bert_ner.utils import Tool
+from torch.optim.lr_scheduler import StepLR
 from common.runner.bert_common_runner import BertCommonRunner
 from sequence.bert_ner.bert_ce_config import BertConfig
 from sequence.bert_ner.bert_ce_data import BertDataLoader
@@ -52,7 +52,7 @@ class Bert_Runner(BertCommonRunner):
 
         self._config.model.ntag = len(self.idx2tag)
 
-        self.train_data = self.dataloader.load_train()
+        # self.train_data = self.dataloader.load_train()
         self.valid_data = self.dataloader.load_valid()
         self.test_data = self.dataloader.load_test()
 
@@ -91,6 +91,7 @@ class Bert_Runner(BertCommonRunner):
     def _build_evaluator(self):
         self._evaluator = EventExtractEvaluator(self._config, self.idx2tag)
 
+    @timeit
     def _valid(self, episode, valid_log_writer):
         print("begin validating epoch {}...".format(episode + 1))
         # switch to evaluate mode
@@ -115,20 +116,29 @@ class Bert_Runner(BertCommonRunner):
         return f1
         pass
 
+    @timeit
     def valid(self):
+        print("begin validating...")
         self._load_checkpoint()
         self._model.eval()
-        for dict_input in tqdm(self._valid_dataloader):
+        valid_data_iterator = self.dataloader.data_iterator(self.valid_data)
+        steps = self.valid_data['size'] // self._config.data.batch_size
+        for i in tqdm(range(steps)):
+            batch_data, batch_token_starts, batch_tags = next(valid_data_iterator)
+            batch_masks = batch_data.gt(0)
             input = {}
-            input['text'] = dict_input.text
-            input['tag'] = dict_input.tag
+            input['input_ids'] = batch_data
+            input['labels'] = batch_tags
+            input['attention_mask'] = batch_masks
+            input['input_token_starts'] = batch_token_starts
             dict_outputs = self._model(input)
-            # self._display_output(dict_output)
-            dict_outputs['target_sequence'] = dict_input.tag
+            # self._display_output(dict_outputs['outputs'])
+            dict_outputs['target_sequence'] = batch_tags
             # send batch pred and target
             self._evaluator.evaluate(dict_outputs['outputs'], dict_outputs['target_sequence'])
         # get the result
         f1 = self._evaluator.get_eval_output()
+        return f1
         pass
 
     def _display_output(self, dict_outputs):
@@ -155,44 +165,53 @@ class Bert_Runner(BertCommonRunner):
         pass
 
     def test(self):
-        model = self._load_checkpoint()
+        self._load_checkpoint()
         self._model.eval()
-        for dict_input in tqdm(self._test_dataloader):
-            dict_outputs = self._model(dict_input)
-            # self._display_output(dict_output)
-            dict_outputs['target_sequence'] = dict_input.tag
+        test_data_iterator = self.dataloader.data_iterator(self.test_data)
+        steps = self.test_data['size'] // self._config.data.batch_size
+        for i in tqdm(range(steps)):
+            batch_data, batch_token_starts, batch_tags = next(test_data_iterator)
+            batch_masks = batch_data.gt(0)
+            input = {}
+            input['input_ids'] = batch_data
+            input['labels'] = batch_tags
+            input['attention_mask'] = batch_masks
+            input['input_token_starts'] = batch_token_starts
+            dict_outputs = self._model(input)
+            # self._display_output(dict_outputs['outputs'])
+            dict_outputs['target_sequence'] = batch_tags
             # send batch pred and target
-            self._evaluator.evaluate(dict_outputs['outputs'], dict_outputs['target_sequence'].T)
+            self._evaluator.evaluate(dict_outputs['outputs'], dict_outputs['target_sequence'])
         # get the result
         f1 = self._evaluator.get_eval_output()
+        return f1
+        pass
 
     def _display_result(self, episode):
         pass
 
     def predict_test(self):
         self._load_checkpoint()
+        print('finished load ')
         self._model.eval()
         result_dict = {}
         while True:
             print('请输入一段话：', end='')
             text = input()
-            text_list = []
-            sentence = []
-            for c in text:
-                sentence.append(c)
-                if c in self.word_vocab.stoi.keys():
-                    text_list.append(self.word_vocab.stoi[c])
-                else:
-                    text_list.append(0)
-            text = torch.IntTensor(text_list, device=torch.device(self._config.device))
-            text_len = torch.IntTensor([len(text_list)], device=torch.device(self._config.device))
-            text = text.repeat(self._config.data.batch_size, 1)
-            text_len = text_len.repeat(self._config.data.batch_size, 1)
-            dict_input = {}
-            dict_input['text'] = [text, text_len]
-            dict_input['tag'] = None
-            pred_tags = [self.tag_vocab.itos[index] for index in self._model(dict_input)['outputs'][0]]
-            pred_words = self._tool.get_result_by_sentence_tag(sentence, pred_tags)
+            text_list = ['[CLS]']
+            text_list.extend([c for c in text])
+            ids = self.dataloader.tokenizer.convert_tokens_to_ids(text_list)
+            token_starts = [0]
+            token_starts.extend([1]*len(text))
+            batch_data = torch.tensor(ids, dtype=torch.long).unsqueeze(0).repeat(self._config.data.batch_size, 1).to(self._config.device)
+            batch_token_starts = torch.tensor(token_starts, dtype=torch.long).unsqueeze(0).repeat(self._config.data.batch_size, 1).to(self._config.device)
+            input1 = {}
+            input1['input_ids'] = batch_data
+            input1['labels'] = None
+            input1['attention_mask'] =  batch_data.gt(0)
+            input1['input_token_starts'] = batch_token_starts
+            tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'].cpu().numpy().tolist()[0]]
+            pred_words = self._tool.get_result_by_sentence_tag(text_list[1:], tag_list)
             print(pred_words)
 
 
@@ -200,8 +219,8 @@ if __name__ == '__main__':
     config_file = 'bert_ce_config.yml'
 
     runner = Bert_Runner(config_file)
-    runner.train()
-    runner.valid()
-    runner.test()
+    # runner.train()
+    # runner.valid()
+    # runner.test()
     runner.predict_test()
     pass

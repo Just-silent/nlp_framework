@@ -32,7 +32,7 @@ class BertDataLoader(object):
         self.valid_data = {}
         self.test_data = {}
 
-        self.load_data(config.data.train_path, self.train_data)
+        # self.load_data(config.data.train_path, self.train_data)
         self.load_data(config.data.valid_path, self.valid_data)
         self.load_data(config.data.test_path, self.test_data)
 
