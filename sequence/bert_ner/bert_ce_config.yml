@@ -29,7 +29,7 @@ data:
 
   vocab_path: '{pretrained_models.dir}//vocab.txt'
 
-  max_len: 512
+  max_len: 150
 
   shuffle: True
 
@@ -69,7 +69,7 @@ evaluation:
 
 learn:
   dropout_rate: 0.1
-  learning_rate: 1.0e-4
+  learning_rate: 5.0e-5
   momentum: 0.9
   weight_decay: 1.0e-2
   batch_display: 20
