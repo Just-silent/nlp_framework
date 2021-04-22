@@ -52,7 +52,7 @@ class Bert_Runner(BertCommonRunner):
 
         self._config.model.ntag = len(self.idx2tag)
 
-        # self.train_data = self.dataloader.load_train()
+        self.train_data = self.dataloader.load_train()
         self.valid_data = self.dataloader.load_valid()
         self.test_data = self.dataloader.load_test()
 
@@ -219,8 +219,8 @@ if __name__ == '__main__':
     config_file = 'bert_ce_config.yml'
 
     runner = Bert_Runner(config_file)
-    # runner.train()
-    # runner.valid()
-    # runner.test()
+    runner.train()
+    runner.valid()
+    runner.test()
     runner.predict_test()
     pass
