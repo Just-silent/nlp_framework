@@ -139,6 +139,8 @@ class BertCommonRunner(BaseRunner, ABC):
                     self._save_checkpoint(episode)
                     print("The best model has been saved and its score is {:.4f}".format(f_value))
                     f_max = f_value
+                else:
+                    print("The score of the best model is {:.4f}".format(f_max))
                 # self._display_result(episode)
                 self._scheduler.step()
         self._summary_writer.close()
