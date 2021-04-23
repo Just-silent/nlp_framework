@@ -95,6 +95,7 @@ class Bert_Runner(BertCommonRunner):
     def _valid(self, episode, valid_log_writer):
         print("begin validating epoch {}...".format(episode + 1))
         # switch to evaluate mode
+        self.training = False
         self._model.eval()
         valid_data_iterator = self.dataloader.data_iterator(self.valid_data)
         steps = self.valid_data['size'] // self._config.data.batch_size
@@ -194,7 +195,7 @@ class Bert_Runner(BertCommonRunner):
         self._load_checkpoint()
         print('finished load ')
         self._model.eval()
-        result_dict = {}
+        self.training = False
         while True:
             print('请输入一段话：', end='')
             text = input()
@@ -210,8 +211,12 @@ class Bert_Runner(BertCommonRunner):
             input1['labels'] = None
             input1['attention_mask'] =  batch_data.gt(0)
             input1['input_token_starts'] = batch_token_starts
-            tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'].cpu().numpy().tolist()[0]]
+            if self._config.device=='cpu':
+                tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'].numpy().tolist()[0]]
+            else:
+                tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'].cpu().numpy().tolist()[0]]
             pred_words = self._tool.get_result_by_sentence_tag(text_list[1:], tag_list)
+            print(tag_list)
             print(pred_words)
 
 
@@ -220,7 +225,7 @@ if __name__ == '__main__':
 
     runner = Bert_Runner(config_file)
     runner.train()
-    runner.valid()
-    runner.test()
+    # runner.valid()
+    # runner.test()
     runner.predict_test()
     pass

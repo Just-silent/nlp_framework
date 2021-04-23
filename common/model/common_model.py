@@ -8,7 +8,8 @@ from abc import ABC
 from base.model.base_model import BaseModel
 
 import torch.nn as nn
-from torch import Module
+from torch.nn import Module
+from torchcrf import CRF
 from torch.nn.utils.rnn import pad_sequence
 from transformers.modeling_bert import BertModel, BertPreTrainedModel
 
@@ -96,8 +97,17 @@ class TransformerDecoder(Module):
 
 
 class CrfDecoder(Module):
-    def __init__(self):
+    def __init__(self, num_tag, batch_first):
         super(CrfDecoder, self).__init__()
+        self.crflayer = CRF(num_tag, batch_first=batch_first)
 
-    def forward(self):
-        pass
+    def forward(self, emission, tag, crf_mask):
+        crf_output = {
+            'crf_loss':None,
+            'output':None
+        }
+        if self.training:
+            crf_output['crf_loss'] = -self.crflayer(emission, tag, mask=crf_mask)
+        else:
+            crf_output['output'] = self.crflayer.decode(emission, mask=crf_mask)
+        return crf_output

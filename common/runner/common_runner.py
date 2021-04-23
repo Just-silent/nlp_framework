@@ -155,6 +155,7 @@ class CommonRunner(BaseRunner, ABC):
             input = {}
             input['text'] = dict_input.text
             input['tag'] = dict_input.tag
+            self.training = True
             dict_output = self._model(input)
             dict_loss = self._loss(dict_output)
 

@@ -34,7 +34,7 @@ class EventExtractEvaluator(CommonSeqEvaluator):
             target_list.extend([self.idx2tag[index.item()] for index in target1])
         for i, pred in enumerate(preds):
             pred = pred[:lens[i]]
-            pred_list.extend([self.idx2tag[index.item()] for index in pred])
+            pred_list.extend([self.idx2tag[index] for index in pred])
         return pred_list, target_list
 
     def evaluate(self, pred, target):

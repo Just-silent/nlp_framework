@@ -21,11 +21,11 @@ pretrained_models:
   is_use: False
 
 data:
-  name: 'msra'
+  name: 'xintong'
   base_dir: '{home.dir}//data'
-  train_path: '{data.base_dir}//{data.name}//train_bio.conll'
-  valid_path: '{data.base_dir}//{data.name}//test_bio.conll'
-  test_path: '{data.base_dir}//{data.name}//test_bio.conll'
+  train_path: '{data.base_dir}//{data.name}//xin_tong_train.conll'
+  valid_path: '{data.base_dir}//{data.name}//xin_tong_valid.conll'
+  test_path: '{data.base_dir}//{data.name}//xin_tong_valid.conll'
 
   vocab_path: '{pretrained_models.dir}//vocab.txt'
 
@@ -38,7 +38,7 @@ data:
 
   num_vocab: 20000
   num_tag: 8
-  batch_size: 32
+  batch_size: 4
   batch_first: True
 
   train_shuffle: True
@@ -57,6 +57,7 @@ model:
   lr: 1.0e-4
   hidden_dropout_prob: 0.5
   is_pretrained_model: True
+  label_pad: True
 
 loss:
   alpha: 1.0
@@ -73,7 +74,7 @@ learn:
   momentum: 0.9
   weight_decay: 1.0e-2
   batch_display: 20
-  episode: 100
+  episode: 10
   dir:
     work: "{project.dir.work}////{model.name}"
     log: '{learn.dir.work}//log'

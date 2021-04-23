@@ -42,7 +42,9 @@ class BertDataLoader(object):
             for line in file.readlines():
                 if line!='\n':
                     tags.append(line.strip().split()[1])
-        result = ['PAD']
+        result = []
+        if self._config.model.label_pad:
+            result = ['PAD']
         for tag in list(set(tags)):
             result.append(tag)
         return result
@@ -74,7 +76,7 @@ class BertDataLoader(object):
                     sentences.append((self.tokenizer.convert_tokens_to_ids(subwords), token_start_idxs))
                     ts = [self.tag2idx.get(tag) for tag in ts]
                     tags.append(ts)
-                    sentence = ['[CLS]']
+                    sentence = []
                     ts = []
             else:
                 char, t = line.strip().split()
