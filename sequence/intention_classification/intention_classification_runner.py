@@ -13,14 +13,14 @@ import torch.optim as optim
 
 from tqdm import tqdm
 from common.util.utils import timeit
-from sequence.bert_ner.utils import Tool
 from torch.optim.lr_scheduler import StepLR
 from common.runner.bert_common_runner import BertCommonRunner
-from sequence.bert_ner.bert_ce_config import BertConfig
-from sequence.bert_ner.bert_ce_data import BertDataLoader
-from sequence.bert_ner.bert_ce_evaluator import EventExtractEvaluator
-from sequence.bert_ner.bert_ce_model import BertForSequenceTagging
-from sequence.bert_ner.bert_ce_loss import SequenceCRFLoss
+from sequence.intention_classification.utils import Tool
+from sequence.intention_classification.intention_classification_config import IntentionClassificationConfig
+from sequence.intention_classification.intention_classification_data import IntentionClassificationDataLoader
+from sequence.intention_classification.intention_classification_evaluator import IntentionClassificationEvaluator
+from sequence.intention_classification.intention_classification_model import IntentionClassification
+from sequence.intention_classification.intention_classification_loss import SequenceCRFLoss
 
 RANDOM_SEED = 2020
 
@@ -39,13 +39,13 @@ class Bert_Runner(BertCommonRunner):
 
     @timeit
     def _build_config(self):
-        bert_config = BertConfig(self._config_file)
+        bert_config = IntentionClassificationConfig(self._config_file)
         self._config = bert_config.load_config()
         pass
 
     @timeit
     def _build_data(self):
-        self.dataloader = BertDataLoader(self._config)
+        self.dataloader = IntentionClassificationDataLoader(self._config)
 
         self.tag2idx = self.dataloader.tag2idx
         self.idx2tag = self.dataloader.idx2tag
@@ -61,7 +61,7 @@ class Bert_Runner(BertCommonRunner):
 
     @timeit
     def _build_model(self):
-        self._model = BertForSequenceTagging.from_pretrained(self._config.pretrained_models.dir, num_labels=self._config.model.ntag).to(self._config.device)
+        self._model = IntentionClassification.from_pretrained(self._config.pretrained_models.dir, num_labels=self._config.model.ntag).to(self._config.device)
         pass
 
     @timeit
@@ -89,7 +89,7 @@ class Bert_Runner(BertCommonRunner):
 
     @timeit
     def _build_evaluator(self):
-        self._evaluator = EventExtractEvaluator(self._config, self.idx2tag)
+        self._evaluator = IntentionClassificationEvaluator(self._config, self.idx2tag)
 
     @timeit
     def _valid(self, episode, valid_log_writer):
@@ -211,28 +211,21 @@ class Bert_Runner(BertCommonRunner):
             input1['labels'] = None
             input1['attention_mask'] =  batch_data.gt(0)
             input1['input_token_starts'] = batch_token_starts
-            tag_list = None
+            tag = None
+            index = self._model(input1)['outputs'][0]
             if self._config.device=='cpu':
-                if self._config.model.is_crf:
-                    tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'][0]]
-                else:
-                    tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'].numpy().tolist()[0]]
+                tag = self.idx2tag[index.numpy().item()]
             else:
-                if self._config.model.is_crf:
-                    tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'][0]]
-                else:
-                    tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'].cpu().numpy().tolist()[0]]
-            pred_words = self._tool.get_result_by_sentence_tag(text_list[1:], tag_list)
-            print(tag_list)
-            print(pred_words)
+                tag = self.idx2tag[index.cpu().numpy().item()]
+            print(tag)
 
 
 if __name__ == '__main__':
-    config_file = 'bert_ce_config.yml'
+    config_file = 'intention_classification_config.yml'
 
     runner = Bert_Runner(config_file)
-    # runner.train()
-    # runner.valid()
-    # runner.test()
+    runner.train()
+    runner.valid()
+    runner.test()
     runner.predict_test()
     pass
