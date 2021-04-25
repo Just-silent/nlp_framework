@@ -7,15 +7,14 @@ from torch.nn.utils.rnn import pad_sequence
 
 from common.model.common_model import CrfDecoder
 
-class IntentionClassification(BertPreTrainedModel):
+class TextSimilarity(BertPreTrainedModel):
 	def __init__(self, config):
-		super(IntentionClassification, self).__init__(config)
+		super(TextSimilarity, self).__init__(config)
 		self.num_labels = config.num_labels
 
 		self.bert = BertModel(config)
 		self.dropout = nn.Dropout(config.hidden_dropout_prob)
-		self.classifier = nn.Linear(config.hidden_size, config.num_labels)
-		self.crf_decoder = CrfDecoder(config.num_labels, batch_first=True)
+		self.classifier = nn.Linear(config.hidden_size, 2)
 
 		# self.init_weights()
 
@@ -37,25 +36,16 @@ class IntentionClassification(BertPreTrainedModel):
 		sequence_output = outputs[1]
 		sequence_output = self.dropout(sequence_output)
 		logits = self.classifier(sequence_output)
-
-		loss_mask = None
+		logits = torch.softmax(logits, dim=-1)
 		loss = None
 		outputs = {}
 		if labels is not None:
-			# loss_mask = labels.gt(-1)
 			loss_fct = CrossEntropyLoss()
-			# # Only keep active parts of the loss
-			# if loss_mask is not None:
-			# 	active_loss = loss_mask.view(-1) == 1
-			# 	active_logits = logits.view(-1, self.num_labels)[active_loss]
-			# 	active_labels = labels.view(-1)[active_loss]
-			# 	loss = loss_fct(active_logits, active_labels)
-			# else:
 			if self.training:
-				loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+				loss = loss_fct(logits.view(-1, 2), labels.view(-1))
 
 		outputs['loss_batch'] = loss
 		outputs['emissions'] = logits
 		outputs['outputs'] = torch.argmax(logits, dim=-1)
 		outputs['mask'] = input_token_starts
-		return outputs  # (loss), scores
+		return outputs

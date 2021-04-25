@@ -1,7 +1,7 @@
 # shared for multiple projects in this machine, raw data, read only
 
 home:
-  dir: 'D://workspace'
+  dir: 'D:/workspace'
 #  dir: '//home//admin//jupyter//workspace'
 
 device: 'cpu'
@@ -9,9 +9,9 @@ device: 'cpu'
 
 # Shared for multiple modules in the project
 project:
-  name: 'bert_ner'
+  name: 'email'
   dir:
-    work: '{home.dir}//{project.name}'
+    work: '{home.dir}/{project.name}'
   seed: 19980603
 
 pretrained_models:
@@ -23,9 +23,10 @@ pretrained_models:
 data:
   name: 'email'
   base_dir: '{home.dir}//data'
-  train_path: '{data.base_dir}//{data.name}//seq_train.conll'
-  valid_path: '{data.base_dir}//{data.name}//seq_valid.conll'
-  test_path: '{data.base_dir}//{data.name}//seq_valid.conll'
+  ori_path: '{data.base_dir}//{data.name}//classification.xlsx'
+  train_path: '{data.base_dir}//{data.name}//classification_train.xlsx'
+  valid_path: '{data.base_dir}//{data.name}//classification_valid.xlsx'
+  test_path: '{data.base_dir}//{data.name}//classification_valid.xlsx'
 
   vocab_path: '{pretrained_models.dir}//vocab.txt'
 
@@ -47,18 +48,18 @@ data:
 
 # specified for specific module
 model:
-  name: 'keywords_model'
+  name: 'email_model'
   dim_embedding: 300
   dim_hidden: 768
   num_layer: 1
   bidirectional: True
   batch_first: False
   nlayer: 1
-  lr: 1.0e-4
+  lr: 5.0e-4
   hidden_dropout_prob: 0.5
   is_pretrained_model: True
-  label_pad: True
-  is_crf: True
+  label_pad: False
+  is_crf: False
 
 loss:
   alpha: 1.0
@@ -75,11 +76,11 @@ learn:
   momentum: 0.9
   weight_decay: 1.0e-2
   batch_display: 20
-  episode: 1
+  episode: 10
   dir:
-    work: "{project.dir.work}//{model.name}"
-    log: '{learn.dir.work}//log'
-    data: "{learn.dir.work}//data"
-    saved: '{learn.dir.work}//saved//'
-    result: '{learn.dir.work}//result//result.xlsx'
-    summary: '{learn.dir.work}//summary'
+    work: "{project.dir.work}/{model.name}"
+    log: '{learn.dir.work}/log/'
+    data: "{learn.dir.work}/data/"
+    saved: '{learn.dir.work}/saved/'
+    result: '{learn.dir.work}/result/result.xlsx'
+    summary: '{learn.dir.work}/summary/'

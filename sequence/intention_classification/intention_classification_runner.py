@@ -4,7 +4,6 @@
 # file      :event_extract_runner.py
 # IDE       :PyCharm
 
-
 import torch
 import random
 import warnings

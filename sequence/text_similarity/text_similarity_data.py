@@ -13,7 +13,7 @@ from transformers import BertTokenizer
 import openpyxl
 
 
-class IntentionClassificationDataLoader(object):
+class TextSimilarityDataLoader(object):
     def __init__(self, config):
         # , data_dir, bert_class, params, token_pad_idx=0, tag_pad_idx=-1
         self._config = config
@@ -25,9 +25,7 @@ class IntentionClassificationDataLoader(object):
         self.device = config.device
         self.seed = config.project.seed
 
-        tags = self.load_tags()
-        self.tag2idx = {tag: idx for idx, tag in enumerate(tags)}
-        self.idx2tag = {idx: tag for idx, tag in enumerate(tags)}
+        self.tags = self.load_tags()
 
         self.tokenizer = BertTokenizer.from_pretrained(config.pretrained_models.dir, do_lower_case=False)
 
@@ -119,13 +117,22 @@ class IntentionClassificationDataLoader(object):
             if ws.cell(line_num, 3).value is None:
                 break
             sentence = ws.cell(line_num, 3).value.strip()
-            tag = self.tag2idx[ws.cell(line_num, 5).value.strip()]
-            subwords = list(map(self.tokenizer.tokenize, sentence))
-            subword_lengths = list(map(len, subwords))
-            subwords = ['[CLS]'] + [item for indices in subwords for item in indices]
-            token_start_idxs = 1 + np.cumsum([0] + subword_lengths[:-1])
-            sentences.append((self.tokenizer.convert_tokens_to_ids(subwords), token_start_idxs))
-            tags.append(tag)
+            tag = ws.cell(line_num, 5).value.strip()
+            for t in self.tags:
+                if t!=tag:
+                    subwords = list(map(self.tokenizer.tokenize, sentence))
+                    t = list(map(self.tokenizer.tokenize, t))
+                    subwords = ['[CLS]'] + [item for indices in subwords for item in indices] + ['[SEP]'] + [item for indices in t for item in indices] + ['[SEP]']
+                    token_start_idxs = [0] + [1]*(len(sentence)+1) + [2]*(len(t)+1)
+                    sentences.append((self.tokenizer.convert_tokens_to_ids(subwords), token_start_idxs))
+                    tags.append(0)
+                else:
+                    subwords = list(map(self.tokenizer.tokenize, sentence))
+                    t = list(map(self.tokenizer.tokenize, t))
+                    subwords = ['[CLS]'] + [item for indices in subwords for item in indices] + ['[SEP]'] + [item for indices in t for item in indices] + ['[SEP]']
+                    token_start_idxs = [0] + [1] * (len(sentence) + 1) + [2] * (len(t) + 1)
+                    sentences.append((self.tokenizer.convert_tokens_to_ids(subwords), token_start_idxs))
+                    tags.append(1)
         data['tags'] = tags
         data['data'] = sentences
         data['size'] = len(sentences)
@@ -187,6 +194,7 @@ class IntentionClassificationDataLoader(object):
 
             # prepare a numpy array with the data, initialising the data with pad_idx
             batch_data = self.token_pad_idx * np.ones((batch_len, max_subwords_len))
+            token_starts = self.token_pad_idx * np.ones((batch_len, max_subwords_len))
             batch_token_starts = []
 
             # copy the data to the numpy array
@@ -194,13 +202,11 @@ class IntentionClassificationDataLoader(object):
                 cur_subwords_len = len(sentences[j][0])
                 if cur_subwords_len <= max_subwords_len:
                     batch_data[j][:cur_subwords_len] = sentences[j][0]
+                    token_starts[j][:cur_subwords_len] = sentences[j][-1]
                 else:
                     batch_data[j] = sentences[j][0][:max_subwords_len]
-                token_start_idx = sentences[j][-1]
-                token_starts = np.zeros(max_subwords_len)
-                token_starts[[idx for idx in token_start_idx if idx < max_subwords_len]] = 1
-                batch_token_starts.append(token_starts)
-                max_token_len = max(int(sum(token_starts)), max_token_len)
+                    token_starts[j] = sentences[j][-1][:max_subwords_len]
+                max_token_len = max(int(sum(token_starts[j])), max_token_len)
 
             if not interMode:
                 batch_tags = self.tag_pad_idx * np.ones((batch_len))
@@ -209,7 +215,7 @@ class IntentionClassificationDataLoader(object):
 
             # since all data are indices, we convert them to torch LongTensors
             batch_data = torch.tensor(batch_data, dtype=torch.long)
-            batch_token_starts = torch.tensor(batch_token_starts, dtype=torch.long)
+            batch_token_starts = torch.tensor(token_starts, dtype=torch.long)
             if not interMode:
                 batch_tags = torch.tensor(batch_tags, dtype=torch.long)
 
@@ -232,7 +238,7 @@ class IntentionClassificationDataLoader(object):
 
 
 if __name__ == '__main__':
-    config_file = 'intention_classification_config.yml'
+    config_file = 'text_similarity_config.yml'
     import dynamic_yaml
 
     # Device
@@ -240,6 +246,6 @@ if __name__ == '__main__':
 
     with open(config_file, mode='r', encoding='UTF-8') as f:
         config = dynamic_yaml.load(f)
-    data_loader = IntentionClassificationDataLoader(config)
+    data_loader = TextSimilarityDataLoader(config)
     datas = data_loader.cut_data()
     pass
