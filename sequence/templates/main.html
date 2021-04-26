@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>BF科技</title>
+</head>
+<body>
+    <h1 align="center">内网邮件问答系统</h1>
+    <br>
+    <p align="center">推荐问题：项目如何关闭、ZFI17122</p>
+    <!--<p align="center">问题类型：项目、CJ32项目预算</p>-->
+    <center>
+    <form action="/info" method="get" align="center">
+        请输入文本：<input type="text"  size="80" name="cw_question">
+        <input type="submit" value="查询">
+    </form>
+    </center>
+    <br>
+    <br>
+    <p align="left"><font color="#800000">{{questuon}}</font></p>
+    <p align="middle">{{result}}</p>
+    <!--<p align="right">{{type}}</p>-->
+</body>
+</html>

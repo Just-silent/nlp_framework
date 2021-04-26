@@ -123,7 +123,7 @@ class TextSimilarityDataLoader(object):
             for t in self.tags:
                 if t!=tag:
                     num+=1
-                    if num<=2:
+                    if num<=1:
                         subwords = list(map(self.tokenizer.tokenize, sentence))
                         t = list(map(self.tokenizer.tokenize, t))
                         subwords = ['[CLS]'] + [item for indices in subwords for item in indices] + ['[SEP]'] + [item for indices in t for item in indices] + ['[SEP]']

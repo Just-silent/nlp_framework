@@ -28,10 +28,10 @@ torch.manual_seed(RANDOM_SEED)
 
 warnings.filterwarnings("ignore")
 
-class Bert_Runner(BertCommonRunner):
+class IntentionClassificationRunner(BertCommonRunner):
 
     def __init__(self, seq_config_file):
-        super(Bert_Runner, self).__init__(seq_config_file)
+        super(IntentionClassificationRunner, self).__init__(seq_config_file)
         self._max_f1 = -1
         self._tool = Tool()
         pass
@@ -222,7 +222,7 @@ class Bert_Runner(BertCommonRunner):
 if __name__ == '__main__':
     config_file = 'intention_classification_config.yml'
 
-    runner = Bert_Runner(config_file)
+    runner = IntentionClassificationRunner(config_file)
     runner.train()
     runner.valid()
     runner.test()
