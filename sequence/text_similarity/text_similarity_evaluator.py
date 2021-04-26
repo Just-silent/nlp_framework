@@ -11,12 +11,19 @@ from common.evaluation.common_sequence_evaluator import CommonSeqEvaluator
 class TextSimilarityEvaluator(CommonSeqEvaluator):
     def __init__(self, config):
         super(TextSimilarityEvaluator, self).__init__()
+        self._config = config
         # self._labels.remove('O')
         # self._labels.remove('PAD')
         self._pred_list = []
         self._true_list = []
 
     def _change_type(self, preds, targets):
+        if self._config.device=='cpu':
+            preds = preds.numpy().tolist()
+            targets = targets.numpy().tolist()
+        else:
+            preds = preds.cpu().numpy().tolist()
+            targets = targets.cpu().numpy().tolist()
         return preds, targets
 
     def evaluate(self, pred, target):

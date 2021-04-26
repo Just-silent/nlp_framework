@@ -118,14 +118,18 @@ class TextSimilarityDataLoader(object):
                 break
             sentence = ws.cell(line_num, 3).value.strip()
             tag = ws.cell(line_num, 5).value.strip()
+            random.shuffle(self.tags)
+            num = 0
             for t in self.tags:
                 if t!=tag:
-                    subwords = list(map(self.tokenizer.tokenize, sentence))
-                    t = list(map(self.tokenizer.tokenize, t))
-                    subwords = ['[CLS]'] + [item for indices in subwords for item in indices] + ['[SEP]'] + [item for indices in t for item in indices] + ['[SEP]']
-                    token_start_idxs = [0] + [1]*(len(sentence)+1) + [2]*(len(t)+1)
-                    sentences.append((self.tokenizer.convert_tokens_to_ids(subwords), token_start_idxs))
-                    tags.append(0)
+                    num+=1
+                    if num<=2:
+                        subwords = list(map(self.tokenizer.tokenize, sentence))
+                        t = list(map(self.tokenizer.tokenize, t))
+                        subwords = ['[CLS]'] + [item for indices in subwords for item in indices] + ['[SEP]'] + [item for indices in t for item in indices] + ['[SEP]']
+                        token_start_idxs = [0] + [1]*(len(sentence)+1) + [2]*(len(t)+1)
+                        sentences.append((self.tokenizer.convert_tokens_to_ids(subwords), token_start_idxs))
+                        tags.append(0)
                 else:
                     subwords = list(map(self.tokenizer.tokenize, sentence))
                     t = list(map(self.tokenizer.tokenize, t))

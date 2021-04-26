@@ -47,5 +47,5 @@ class TextSimilarity(BertPreTrainedModel):
 		outputs['loss_batch'] = loss
 		outputs['emissions'] = logits
 		outputs['outputs'] = torch.argmax(logits, dim=-1)
-		outputs['mask'] = input_token_starts
+		outputs['mask'] = attention_mask
 		return outputs

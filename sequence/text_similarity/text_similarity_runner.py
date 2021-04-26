@@ -93,7 +93,7 @@ class Bert_Runner(BertCommonRunner):
         self.training = False
         self._model.eval()
         valid_data_iterator = self.dataloader.data_iterator(self.valid_data)
-        steps = self.valid_data['size'] // self._config.data.batch_size//20
+        steps = self.valid_data['size'] // self._config.data.batch_size
         for i in tqdm(range(steps)):
             batch_data, batch_token_starts, batch_tags = next(valid_data_iterator)
             batch_masks = batch_data.gt(0)
@@ -209,9 +209,9 @@ class Bert_Runner(BertCommonRunner):
             tag = None
             index = self._model(input1)['outputs'][0]
             if self._config.device=='cpu':
-                tag = self.idx2tag[index.numpy().item()]
+                tag = index.numpy().item()
             else:
-                tag = self.idx2tag[index.cpu().numpy().item()]
+                tag = index.cpu().numpy().item()
             print(tag)
 
 
@@ -219,7 +219,7 @@ if __name__ == '__main__':
     config_file = 'text_similarity_config.yml'
 
     runner = Bert_Runner(config_file)
-    runner.train()
+    # runner.train()
     runner.valid()
     runner.test()
     runner.predict_test()
