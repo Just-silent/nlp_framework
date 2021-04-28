@@ -75,7 +75,7 @@ learn:
   momentum: 0.9
   weight_decay: 1.0e-2
   batch_display: 20
-  episode: 5
+  episode: 20
   dir:
     work: "{project.dir.work}//{model.name}"
     log: '{learn.dir.work}//log'

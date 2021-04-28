@@ -29,7 +29,7 @@ class TextSimilarity(BertPreTrainedModel):
 		head_mask = None
 		outputs = self.bert(input_ids,
 							attention_mask=attention_mask,
-							token_type_ids=token_type_ids,
+							token_type_ids=input_token_starts,
 							position_ids=position_ids,
 							head_mask=head_mask,
 							inputs_embeds=inputs_embeds)

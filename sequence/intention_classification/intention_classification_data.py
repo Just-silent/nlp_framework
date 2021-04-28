@@ -2,12 +2,9 @@
 # @Author   : Just-silent
 # @time     : 2020/9/18 8:16
 
-import os
 import torch
-import utils
 import random
 import numpy as np
-from tqdm import tqdm
 from transformers import BertTokenizer
 
 import openpyxl
@@ -53,8 +50,9 @@ class IntentionClassificationDataLoader(object):
         result = []
         if self._config.model.label_pad:
             result = ['PAD']
-        for tag in list(set(tags)):
-            result.append(tag)
+        tags_new = list(set(tags))
+        tags_new.sort(key=tags.index)
+        result.extend(tags_new)
         return result
         # return list(set(tags))
 

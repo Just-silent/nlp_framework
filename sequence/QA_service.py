@@ -9,8 +9,8 @@ from flask import *
 from time import time
 from tqdm import tqdm
 from py2neo import Graph, Node, Relationship, NodeMatcher, RelationshipMatcher, Subgraph
-# from sequence.bert_ner.bert_ce_runner import Bert_Runner
-# from sequence.intention_classification.intention_classification_runner import IntentionClassificationRunner
+from sequence.bert_ner.bert_ce_runner import Bert_Runner
+from sequence.intention_classification.intention_classification_runner import IntentionClassificationRunner
 
 
 class Neo4jImport():
@@ -21,11 +21,13 @@ class Neo4jImport():
             password="123456"
         )
         self.email_dict = {}
-        self.n = 10
-        self.nodes = []
-        self.label = 'Test'
+        self.macth_node('普通附件', '添加')
         self.node_match = NodeMatcher(self.graf)
         self.rel_match = RelationshipMatcher(self.graf)
+        self.icr = IntentionClassificationRunner('intention_classification_config.yml')
+        self.icr.train()
+        self.ner = Bert_Runner('bert_ce_config.yml')
+        self.ner.train()
         pass
 
     def create_node(self, names, label):
@@ -61,38 +63,10 @@ class Neo4jImport():
             print('完成创建关系{}个'.format(len(relation_ships)))
         pass
 
-    def improt_node(self):
-        self.create_node()
-        time_s = time()
-        if self.nodes!=[]:
-            subgraph = Subgraph(self.nodes)
-            self.graf.create(subgraph)
-        time_e = time()
-        print("导入{}节点花费的时间为：{}".format(self.n, time_e-time_s))
-        pass
-
-    def delete_node(self):
-        time_s = time()
-        sql = "MATCH (m:{}) delete m".format(self.label)
-        self.graf.run(sql)
-        time_e = time()
-        print("删除所有节点花费的时间为：{}".format(time_e-time_s))
-
-    def import_rel(self):
-        node1 = list(self.node_match.match(self.label, id=0, name="node_0"))[0]
-        node2 = list(self.node_match.match(self.label, id=1, name="node_1"))[0]
-        rel = Relationship(node1, 'rel' ,node2)
-        subgraph = Subgraph(relationships=[rel])
-        self.graf.create(subgraph)
-        pass
-
-    def delete_rel(self):
-        time_s = time()
-        sql = "MATCH p=(:{})-[r:rel]->(:{}) delete r".format(self.label, self.label)
-        self.graf.run(sql)
-        time_e = time()
-        print("删除所有节点花费的时间为：{}".format(time_e - time_s))
-        pass
+    def macth_node(self, keyword, intent):
+        sql = 'match (:keyword{name:\'' + keyword + '\'})-[:`' + intent + '`]->(m) return m'
+        result = self.graf.run(sql).data()
+        return result
 
     def create_email(self, path):
         wb = openpyxl.load_workbook(path)
@@ -208,8 +182,10 @@ class Neo4jImport():
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
 
-all_code = ['ZFI17070', 'FB03', 'ZFI17077、CJE0', 'ZFI17122', 'ABUMN', 'CJ20N', 'ZFI00121', 'CJ30', 'AFAB', 'ZFI17024', 'IE02', 'ZFI17201', 'CJI5', 'CJ30、CJ32', 'ZFI00150N', 'ZFI000710', 'ZFI17303', 'AFBP', 'ZFI17023', 'CJ32', 'FBRA', 'ZFI17102', 'MR8M', 'CJ02', 'ZFI17137']
+import sys
+sys.path.append(r'E:\Github\nlp_framework\sequence\bert_ner')
 
+neo4j = Neo4jImport()
 
 @app.route('/')
 def index():
@@ -221,8 +197,9 @@ def email():
     # 获取文本
     text = request.args.get("cw_question")
     print(text)
-    # keywords =
-    result = 'hello'
+    keywords = neo4j.ner.predict_test(text)[0]
+    intent = neo4j.icr.predict_test(text)
+    result = neo4j.macth_node(keywords, intent)
     return render_template('main.html', questuon=text, result=result)
 
 
@@ -233,10 +210,6 @@ def error(e):
 
 
 if __name__ == '__main__':
-    # icr = IntentionClassificationRunner('.bert_ner/bert_ce_config.yml')
-    # icr.train()
-    # ner = Bert_Runner('.intention_classification/intention_classification_config.yml')
-    # ner.train()
     print(app.url_map)
     # app.run(port=7777, debug=False, host='0.0.0.0')
     app.run(port=7777, debug=False, host='127.0.0.1')

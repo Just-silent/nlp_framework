@@ -191,48 +191,49 @@ class Bert_Runner(BertCommonRunner):
     def _display_result(self, episode):
         pass
 
-    def predict_test(self):
+    def predict_test(self, text):
         self._load_checkpoint()
         print('finished load ')
         self._model.eval()
         self.training = False
-        while True:
-            print('请输入一段话：', end='')
-            text = input()
-            text_list = ['[CLS]']
-            text_list.extend([c for c in text])
-            ids = self.dataloader.tokenizer.convert_tokens_to_ids(text_list)
-            token_starts = [0]
-            token_starts.extend([1]*len(text))
-            batch_data = torch.tensor(ids, dtype=torch.long).unsqueeze(0).repeat(self._config.data.batch_size, 1).to(self._config.device)
-            batch_token_starts = torch.tensor(token_starts, dtype=torch.long).unsqueeze(0).repeat(self._config.data.batch_size, 1).to(self._config.device)
-            input1 = {}
-            input1['input_ids'] = batch_data
-            input1['labels'] = None
-            input1['attention_mask'] =  batch_data.gt(0)
-            input1['input_token_starts'] = batch_token_starts
-            tag_list = None
-            if self._config.device=='cpu':
-                if self._config.model.is_crf:
-                    tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'][0]]
-                else:
-                    tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'].numpy().tolist()[0]]
+        # while True:
+            # print('请输入一段话：', end='')
+            # text = input()
+        text_list = ['[CLS]']
+        text_list.extend([c for c in text])
+        ids = self.dataloader.tokenizer.convert_tokens_to_ids(text_list)
+        token_starts = [0]
+        token_starts.extend([1]*len(text))
+        batch_data = torch.tensor(ids, dtype=torch.long).unsqueeze(0).repeat(self._config.data.batch_size, 1).to(self._config.device)
+        batch_token_starts = torch.tensor(token_starts, dtype=torch.long).unsqueeze(0).repeat(self._config.data.batch_size, 1).to(self._config.device)
+        input1 = {}
+        input1['input_ids'] = batch_data
+        input1['labels'] = None
+        input1['attention_mask'] =  batch_data.gt(0)
+        input1['input_token_starts'] = batch_token_starts
+        tag_list = None
+        if self._config.device=='cpu':
+            if self._config.model.is_crf:
+                tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'][0]]
             else:
-                if self._config.model.is_crf:
-                    tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'][0]]
-                else:
-                    tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'].cpu().numpy().tolist()[0]]
-            pred_words = self._tool.get_result_by_sentence_tag(text_list[1:], tag_list)
-            print(tag_list)
-            print(pred_words)
+                tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'].numpy().tolist()[0]]
+        else:
+            if self._config.model.is_crf:
+                tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'][0]]
+            else:
+                tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'].cpu().numpy().tolist()[0]]
+        pred_words = self._tool.get_result_by_sentence_tag(text_list[1:], tag_list)
+        print(tag_list)
+        print(pred_words)
+        return pred_words
 
 
 if __name__ == '__main__':
     config_file = 'bert_ce_config.yml'
 
     runner = Bert_Runner(config_file)
-    runner.train()
-    # runner.valid()
+    # runner.train()
+    runner.valid()
     # runner.test()
     # runner.predict_test()
     pass

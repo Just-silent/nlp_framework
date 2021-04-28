@@ -4,7 +4,7 @@
 
 import os
 import torch
-import utils
+import pandas as pd
 import random
 import numpy as np
 from tqdm import tqdm
@@ -33,13 +33,33 @@ class TextSimilarityDataLoader(object):
         self.valid_data = {}
         self.test_data = {}
 
-        self.load_data(config.data.train_path, self.train_data)
-        self.load_data(config.data.valid_path, self.valid_data)
-        self.load_data(config.data.test_path, self.test_data)
+        # self.load_data(config.data.train_path, self.train_data)
+        # self.load_data(config.data.valid_path, self.valid_data)
+        # self.load_data(config.data.test_path, self.test_data)
+
+        self.load_tsv(config.data.train_path, self.train_data)
+        self.load_tsv(config.data.valid_path, self.valid_data)
+        self.load_tsv(config.data.test_path, self.test_data)
+
+    def load_tsv(self, path, data):
+        sentences = []
+        tags = []
+        lines = pd.read_csv(path, sep='\t', error_bad_lines=False)
+        for s1, s2, s in tqdm(lines.values):
+            subwords1 = list(map(self.tokenizer.tokenize, s1))
+            subwords2 = list(map(self.tokenizer.tokenize, s2))
+            subwords = ['[CLS]'] + [item for indices in subwords1 for item in indices] + ['[SEP]'] + [item for indices in subwords2 for item in indices] + ['[SEP]']
+            token_start_idxs = [0] * (len(s1) + 2) + [1] * (len(s2) + 1)
+            sentences.append((self.tokenizer.convert_tokens_to_ids(subwords), token_start_idxs))
+            tags.append(s)
+        data['tags'] = tags
+        data['data'] = sentences
+        data['size'] = len(sentences)
+        pass
 
     def load_tags(self):
         tags = []
-        wb = openpyxl.load_workbook(self._config.data.train_path)
+        wb = openpyxl.load_workbook(self._config.data.ori_path)
         sheetnames = wb.sheetnames
         ws = wb[sheetnames[0]]
         max_row = ws.max_row
@@ -51,8 +71,9 @@ class TextSimilarityDataLoader(object):
         result = []
         if self._config.model.label_pad:
             result = ['PAD']
-        for tag in list(set(tags)):
-            result.append(tag)
+        tags_new = list(set(tags))
+        tags_new.sort(key=tags.index)
+        result.extend(tags_new)
         return result
         # return list(set(tags))
 
@@ -123,18 +144,18 @@ class TextSimilarityDataLoader(object):
             for t in self.tags:
                 if t!=tag:
                     num+=1
-                    if num<=1:
+                    if num<=10:
                         subwords = list(map(self.tokenizer.tokenize, sentence))
                         t = list(map(self.tokenizer.tokenize, t))
                         subwords = ['[CLS]'] + [item for indices in subwords for item in indices] + ['[SEP]'] + [item for indices in t for item in indices] + ['[SEP]']
-                        token_start_idxs = [0] + [1]*(len(sentence)+1) + [2]*(len(t)+1)
+                        token_start_idxs = [0]*(len(sentence)+2) + [1]*(len(t)+1)
                         sentences.append((self.tokenizer.convert_tokens_to_ids(subwords), token_start_idxs))
                         tags.append(0)
                 else:
                     subwords = list(map(self.tokenizer.tokenize, sentence))
                     t = list(map(self.tokenizer.tokenize, t))
                     subwords = ['[CLS]'] + [item for indices in subwords for item in indices] + ['[SEP]'] + [item for indices in t for item in indices] + ['[SEP]']
-                    token_start_idxs = [0] + [1] * (len(sentence) + 1) + [2] * (len(t) + 1)
+                    token_start_idxs = [0] * (len(sentence) + 2) + [1] * (len(t) + 1)
                     sentences.append((self.tokenizer.convert_tokens_to_ids(subwords), token_start_idxs))
                     tags.append(1)
         data['tags'] = tags

@@ -190,33 +190,34 @@ class IntentionClassificationRunner(BertCommonRunner):
     def _display_result(self, episode):
         pass
 
-    def predict_test(self):
+    def predict_test(self, text):
         self._load_checkpoint()
         print('finished load ')
         self._model.eval()
         self.training = False
-        while True:
-            print('请输入一段话：', end='')
-            text = input()
-            text_list = ['[CLS]']
-            text_list.extend([c for c in text])
-            ids = self.dataloader.tokenizer.convert_tokens_to_ids(text_list)
-            token_starts = [0]
-            token_starts.extend([1]*len(text))
-            batch_data = torch.tensor(ids, dtype=torch.long).unsqueeze(0).repeat(self._config.data.batch_size, 1).to(self._config.device)
-            batch_token_starts = torch.tensor(token_starts, dtype=torch.long).unsqueeze(0).repeat(self._config.data.batch_size, 1).to(self._config.device)
-            input1 = {}
-            input1['input_ids'] = batch_data
-            input1['labels'] = None
-            input1['attention_mask'] =  batch_data.gt(0)
-            input1['input_token_starts'] = batch_token_starts
-            tag = None
-            index = self._model(input1)['outputs'][0]
-            if self._config.device=='cpu':
-                tag = self.idx2tag[index.numpy().item()]
-            else:
-                tag = self.idx2tag[index.cpu().numpy().item()]
-            print(tag)
+        # while True:
+            # print('请输入一段话：', end='')
+            # text = input()
+        text_list = ['[CLS]']
+        text_list.extend([c for c in text])
+        ids = self.dataloader.tokenizer.convert_tokens_to_ids(text_list)
+        token_starts = [0]
+        token_starts.extend([1]*len(text))
+        batch_data = torch.tensor(ids, dtype=torch.long).unsqueeze(0).repeat(self._config.data.batch_size, 1).to(self._config.device)
+        batch_token_starts = torch.tensor(token_starts, dtype=torch.long).unsqueeze(0).repeat(self._config.data.batch_size, 1).to(self._config.device)
+        input1 = {}
+        input1['input_ids'] = batch_data
+        input1['labels'] = None
+        input1['attention_mask'] =  batch_data.gt(0)
+        input1['input_token_starts'] = batch_token_starts
+        tag = None
+        index = self._model(input1)['outputs'][0]
+        if self._config.device=='cpu':
+            tag = self.idx2tag[index.numpy().item()]
+        else:
+            tag = self.idx2tag[index.cpu().numpy().item()]
+        print(tag)
+        return tag
 
 
 if __name__ == '__main__':

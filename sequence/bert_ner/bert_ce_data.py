@@ -45,8 +45,9 @@ class BertDataLoader(object):
         result = []
         if self._config.model.label_pad:
             result = ['PAD']
-        for tag in list(set(tags)):
-            result.append(tag)
+        tags_new = list(set(tags))
+        tags_new.sort(key=tags.index)
+        result.extend(tags_new)
         return result
         # return list(set(tags))
 

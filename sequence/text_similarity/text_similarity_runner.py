@@ -93,7 +93,7 @@ class Bert_Runner(BertCommonRunner):
         self.training = False
         self._model.eval()
         valid_data_iterator = self.dataloader.data_iterator(self.valid_data)
-        steps = self.valid_data['size'] // self._config.data.batch_size
+        steps = self.valid_data['size'] // self._config.data.batch_size//100
         for i in tqdm(range(steps)):
             batch_data, batch_token_starts, batch_tags = next(valid_data_iterator)
             batch_masks = batch_data.gt(0)
@@ -192,13 +192,18 @@ class Bert_Runner(BertCommonRunner):
         self._model.eval()
         self.training = False
         while True:
-            print('请输入一段话：', end='')
-            text = input()
+            print('请输入句子一：', end='')
+            text1 = input()
+            print('请输入句子二：', end='')
+            text2 = input()
             text_list = ['[CLS]']
-            text_list.extend([c for c in text])
+            text_list.extend([c for c in text1])
+            text_list.extend('[SEP]')
+            text_list.extend([c for c in text2])
+            text_list.extend('[SEP]')
             ids = self.dataloader.tokenizer.convert_tokens_to_ids(text_list)
-            token_starts = [0]
-            token_starts.extend([1]*len(text))
+            token_starts = [0]*(len(text1)+2)
+            token_starts.extend([1]*(len(text2)+1))
             batch_data = torch.tensor(ids, dtype=torch.long).unsqueeze(0).repeat(self._config.data.batch_size, 1).to(self._config.device)
             batch_token_starts = torch.tensor(token_starts, dtype=torch.long).unsqueeze(0).repeat(self._config.data.batch_size, 1).to(self._config.device)
             input1 = {}
