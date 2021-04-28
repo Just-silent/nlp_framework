@@ -3,7 +3,6 @@
 # @time     : 2020/9/18 8:16
 import os
 import torch
-import utils
 import random
 import numpy as np
 from tqdm import tqdm

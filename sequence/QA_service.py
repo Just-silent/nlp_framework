@@ -25,9 +25,9 @@ class Neo4jImport():
         self.node_match = NodeMatcher(self.graf)
         self.rel_match = RelationshipMatcher(self.graf)
         self.icr = IntentionClassificationRunner('intention_classification_config.yml')
-        self.icr.train()
+        # self.icr.train()
         self.ner = Bert_Runner('bert_ce_config.yml')
-        self.ner.train()
+        # self.ner.train()
         pass
 
     def create_node(self, names, label):
@@ -174,8 +174,6 @@ class Neo4jImport():
         self.create_rel(d1rd2)
         self.create_rel(d2rk)
         self.create_rel(krqs)
-
-
         pass
 
 
@@ -191,7 +189,6 @@ neo4j = Neo4jImport()
 def index():
     return render_template('main.html')
 
-
 @app.route('/info', methods=['GET'])
 def email():
     # 获取文本
@@ -201,8 +198,6 @@ def email():
     intent = neo4j.icr.predict_test(text)
     result = neo4j.macth_node(keywords, intent)
     return render_template('main.html', questuon=text, result=result)
-
-
 
 @app.errorhandler(500)
 def error(e):
@@ -214,7 +209,6 @@ if __name__ == '__main__':
     # app.run(port=7777, debug=False, host='0.0.0.0')
     app.run(port=7777, debug=False, host='127.0.0.1')
     # app.run(port=7777, debug=False)
-
 
 
 # data_path = r'C:\Users\Administrator\Desktop\运维知识整理-内网邮件\邮箱用户手册整理.xlsx'
