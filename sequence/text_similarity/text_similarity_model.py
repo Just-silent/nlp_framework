@@ -36,7 +36,8 @@ class TextSimilarity(BertPreTrainedModel):
 		sequence_output = outputs[1]
 		sequence_output = self.dropout(sequence_output)
 		logits = self.classifier(sequence_output)
-		logits = torch.softmax(logits, dim=-1)
+		# logits = torch.softmax(logits, dim=-1)
+		logits = torch.sigmoid(logits)
 		loss = None
 		outputs = {}
 		if labels is not None:

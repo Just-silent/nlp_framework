@@ -93,7 +93,7 @@ class Bert_Runner(BertCommonRunner):
         self.training = False
         self._model.eval()
         valid_data_iterator = self.dataloader.data_iterator(self.valid_data)
-        steps = self.valid_data['size'] // self._config.data.batch_size//100
+        steps = self.valid_data['size'] // self._config.data.batch_size
         for i in tqdm(range(steps)):
             batch_data, batch_token_starts, batch_tags = next(valid_data_iterator)
             batch_masks = batch_data.gt(0)
@@ -198,9 +198,9 @@ class Bert_Runner(BertCommonRunner):
             text2 = input()
             text_list = ['[CLS]']
             text_list.extend([c for c in text1])
-            text_list.extend('[SEP]')
+            text_list.extend(['[SEP]'])
             text_list.extend([c for c in text2])
-            text_list.extend('[SEP]')
+            text_list.extend(['[SEP]'])
             ids = self.dataloader.tokenizer.convert_tokens_to_ids(text_list)
             token_starts = [0]*(len(text1)+2)
             token_starts.extend([1]*(len(text2)+1))
@@ -211,21 +211,17 @@ class Bert_Runner(BertCommonRunner):
             input1['labels'] = None
             input1['attention_mask'] =  batch_data.gt(0)
             input1['input_token_starts'] = batch_token_starts
-            tag = None
-            index = self._model(input1)['outputs'][0]
-            if self._config.device=='cpu':
-                tag = index.numpy().item()
-            else:
-                tag = index.cpu().numpy().item()
-            print(tag)
+            p = self._model(input1)['emissions'][0]
+            p = [round(i.item(), 2) for i in p]
+            print('相似概率：{}'.format(p[1]))
 
 
 if __name__ == '__main__':
     config_file = 'text_similarity_config.yml'
 
     runner = Bert_Runner(config_file)
-    runner.train()
-    runner.valid()
-    runner.test()
+    # runner.train()
+    # runner.valid()
+    # runner.test()
     runner.predict_test()
     pass

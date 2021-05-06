@@ -50,8 +50,11 @@ class TextSimilarityDataLoader(object):
             subwords2 = list(map(self.tokenizer.tokenize, s2))
             subwords = ['[CLS]'] + [item for indices in subwords1 for item in indices] + ['[SEP]'] + [item for indices in subwords2 for item in indices] + ['[SEP]']
             token_start_idxs = [0] * (len(s1) + 2) + [1] * (len(s2) + 1)
-            sentences.append((self.tokenizer.convert_tokens_to_ids(subwords), token_start_idxs))
-            tags.append(s)
+            if len(token_start_idxs) != len(self.tokenizer.convert_tokens_to_ids(subwords)):
+                print(s1, s2)
+            else:
+                sentences.append((self.tokenizer.convert_tokens_to_ids(subwords), token_start_idxs))
+                tags.append(s)
         data['tags'] = tags
         data['data'] = sentences
         data['size'] = len(sentences)
