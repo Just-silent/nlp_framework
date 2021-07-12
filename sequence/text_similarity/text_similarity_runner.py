@@ -220,8 +220,8 @@ if __name__ == '__main__':
     config_file = 'text_similarity_config.yml'
 
     runner = Bert_Runner(config_file)
-    # runner.train()
-    # runner.valid()
-    # runner.test()
+    runner.train()
+    runner.valid()
+    runner.test()
     runner.predict_test()
     pass

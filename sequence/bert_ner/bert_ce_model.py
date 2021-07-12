@@ -2,10 +2,12 @@
 # @Author   : Just-silent
 # @time     : 2020/9/18 8:17
 
-from transformers.modeling_bert import *
-from torch.nn.utils.rnn import pad_sequence
+import torch.nn as nn
 
+from transformers import *
+from torch.nn.utils.rnn import pad_sequence
 from common.model.common_model import CrfDecoder
+
 
 class BertForSequenceTagging(BertPreTrainedModel):
 	def __init__(self, config):
