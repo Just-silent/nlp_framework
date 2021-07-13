@@ -2,108 +2,212 @@
 # @Author   : Just-silent
 # @time     : 2020/9/18 8:16
 
-import copy
+import json
 import torch
-from torchtext.data import Field, BucketIterator, LabelField
-from torchtext.vocab import Vectors, Vocab
-from transformers import BertConfig, BertTokenizer, BertModel
-
-from common.util.utils import timeit
-from sequence.bert_oppo_dialogue.bert_oppo_dialogue_dataset import ODDataset
-from common.data.common_data_loader import CommonDataLoader
+import random
+import numpy as np
+from tqdm import tqdm
+from transformers import BertTokenizer
 
 
-def tokenizer(token):
-    return [k for k in token]
+class BertDataLoader(object):
+    def __init__(self, config):
+        # , data_dir, bert_class, params, token_pad_idx=0, tag_pad_idx=-1
+        self._config = config
+        self.batch_size = config.data.batch_size
+        self.max_len = config.data.max_len
+        self.token_pad_idx = config.data.token_pad_idx
+        self.tag_pad_idx = config.data.tag_pad_idx
+        self._shuffle = config.data.shuffle
+        self.device = config.device
+        self.seed = config.project.seed
 
+        tags = self.load_tags()
+        self.tag2idx = {tag: idx for idx, tag in enumerate(tags)}
+        self.idx2tag = {idx: tag for idx, tag in enumerate(tags)}
 
-START_TAG = "<START>"
-STOP_TAG = "<STOP>"
-PAD_TAG = "<PAD>"
-UNK_TAG = "<PAD>"
+        self.tokenizer = BertTokenizer.from_pretrained(config.pretrained_models.dir, do_lower_case=False)
 
+        self.train_data = {}
+        self.valid_data = {}
+        self.test_data = {}
 
-class SequenceDataLoader(CommonDataLoader):
+        self.load_data(config.data.train_path, self.train_data)
+        self.load_data(config.data.valid_path, self.valid_data)
+        self.load_data(config.data.test_path, self.test_data)
 
-    def __init__(self, data_config):
-        super(SequenceDataLoader, self).__init__(data_config)
-        self._config = data_config
-        self.__build_field()
-        self._load_data()
-        pass
+    def load_tags(self):
+        tags = []
+        with open(self._config.data.train_path, 'r', encoding='utf-8') as file:
+            for line in file.readlines():
+                if line!='\n':
+                    tags.append(line.strip().split()[1])
+        result = []
+        if self._config.model.label_pad:
+            result = ['PAD']
+        tags_new = list(set(tags))
+        tags_new.sort(key=tags.index)
+        result.extend(tags_new)
+        return result
+        # return list(set(tags))
 
-    def __build_field(self):
-        self.ENC_INPUT = Field(sequential=True, use_vocab=True, lower=True, tokenize=tokenizer, include_lengths=True,
-                          batch_first=self._config.data.batch_first, pad_token='[pad]', unk_token='[unk]')
-        self.DEC_INPUT = Field(sequential=True, use_vocab=True, lower=True, tokenize=tokenizer, include_lengths=True,
-                               batch_first=self._config.data.batch_first, pad_token='[pad]', unk_token='[unk]')
-        self.TAG = Field(sequential=True, use_vocab=True, lower=True, tokenize=tokenizer, is_target=True,
-                         batch_first=self._config.data.batch_first, pad_token='[pad]', unk_token='[unk]')
-        self._fields = [
-            ('enc_input', self.ENC_INPUT), ('dec_input', self.DEC_INPUT), ('tag', self.TAG)
-        ]
-        pass
-
-    @timeit
-    def _load_data(self):
-        self.train_data = ODDataset(
-            path=self._config.data.train_path, fields=self._fields,
-            file='train', config=self._config
-        )
-        self.valid_data = ODDataset(
-            path=self._config.data.valid_path, fields=self._fields,
-            file='valid', config=self._config
-        )
-        self.test_data = ODDataset(
-            path=self._config.data.test_path, fields=self._fields,
-            file='test', config=self._config
-        )
-        self.__build_vocab(self.train_data, self.valid_data, self.test_data)
-        self.__build_iterator(self.train_data, self.valid_data, self.test_data)
-        pass
-
-    def __build_vocab(self, *dataset):
+    def load_sentences_tags(self, path, data):
         """
-        :param dataset: train_data, valid_data, test_data
-        :return: text_vocab, tag_vocab
+        Args:
+            path : the path of the data_file
+            data : the list of data
+        Returns:
+            the list of all vocabs
         """
-        self.ENC_INPUT.build_vocab(*dataset)
-        self.DEC_INPUT.build_vocab(*dataset)
-        self.TAG.build_vocab(*dataset)
-        self.DEC_INPUT.vocab = self.ENC_INPUT.vocab
-        self.TAG.vocab = self.ENC_INPUT.vocab
-        self.word_vocab = self.ENC_INPUT.vocab
-        self.tag_vocab = self.ENC_INPUT.vocab
-        pass
+        sentences = []
+        tags = []
 
-    def __build_iterator(self, *dataset):
-        self._train_iter = BucketIterator(
-            dataset[0], batch_size=self._config.data.train_batch_size, shuffle=True,
-            sort_key=lambda x: len(x.enc_input), sort_within_batch=True, device=self._config.device)
-        self._valid_iter = BucketIterator(
-            dataset[1], batch_size=self._config.data.train_batch_size, shuffle=False,
-            sort_key=lambda x: len(x.enc_input), sort_within_batch=True, device=self._config.device)
-        self._test_iter = BucketIterator(
-            dataset[2], batch_size=self._config.data.test_batch_size, shuffle=False,
-            sort_key=lambda x: len(x.enc_input), sort_within_batch=True, device=self._config.device)
-        pass
+        file = open(path, 'r', encoding='utf-8')
+        sentence = []
+        ts = []
+        for line in file.readlines():
+            json_data = json.loads(line.strip())
+            query1 = json_data['query-01']
+            response1 = json_data['response-01']
+            query2 = json_data['query-02']
+            query_rewrite = ''
+            if 'query-02-rewrite' in json_data.keys():
+                query_rewrite = json_data['query-02-rewrite']
+            enc_text_list = ['[CLS]'] + [c for c in query1] + ['[SEP]'] + [c for c in response1] + ['[SEP]'] + [c for c in query2] + ['[SEP]']
+            enc_text = list(map(self.tokenizer.tokenize, enc_text_list))
+            enc_text_len = len(enc_text)
+            token_start_idxs = 1 + np.cumsum([0] + enc_text_len[:-1])
+            dec_text_list = ['[CLS]'] + [c for c in query_rewrite]
+            tag_list = [c for c in query_rewrite] + ['[SEP]']
+        for line in tqdm(file.readlines()):
+            if line=='\n':
+                if sentence == []:
+                    pass
+                else:
+                    subwords = list(map(self.tokenizer.tokenize, sentence))
+                    subword_lengths = list(map(len, subwords))
+                    subwords = ['[CLS]'] + [item for indices in subwords for item in indices]
+                    token_start_idxs = 1 + np.cumsum([0] + subword_lengths[:-1])
+                    sentences.append((self.tokenizer.convert_tokens_to_ids(subwords), token_start_idxs))
+                    ts = [self.tag2idx.get(tag) for tag in ts]
+                    tags.append(ts)
+                    sentence = []
+                    ts = []
+            else:
+                char, t = line.strip().split()
+                sentence.append(char)
+                ts.append(t)
+        data['tags'] = tags
+        data['data'] = sentences
+        data['size'] = len(sentences)
+
+    def load_data(self, path , data):
+        """Loads the data for each type in types from data_dir.
+
+        Args:
+            data_type: (str) has one of 'train', 'val', 'test' depending on which data is required.
+        Returns:
+            data: (dict) contains the data with tags for each type in types.
+        """
+        self.load_sentences_tags(path, data)
+
+    def data_iterator(self, data):
+        """Returns a generator that yields batches data with tags.
+
+        Args:
+            data: (dict) contains data which has keys 'data', 'tags' and 'size'
+            shuffle: (bool) whether the data should be shuffled
+
+        Yields:
+            batch_data: (tensor) shape: (batch_size, max_len)
+            batch_tags: (tensor) shape: (batch_size, max_len)
+        """
+
+        # make a list that decides the order in which we go over the data- this avoids explicit shuffling of data
+        order = list(range(data['size']))
+        if self._shuffle:
+            random.seed(self.seed)
+            random.shuffle(order)
+
+        interMode = False if 'tags' in data else True
+
+        if data['size'] % self.batch_size == 0:
+            BATCH_NUM = data['size'] // self.batch_size
+        else:
+            BATCH_NUM = data['size'] // self.batch_size + 1
+
+        # one pass over data
+        for i in range(BATCH_NUM):
+            # fetch sentences and tags
+            if i * self.batch_size < data['size'] < (i + 1) * self.batch_size:
+                sentences = [data['data'][idx] for idx in order[i * self.batch_size:]]
+                if not interMode:
+                    tags = [data['tags'][idx] for idx in order[i * self.batch_size:]]
+            else:
+                sentences = [data['data'][idx] for idx in order[i * self.batch_size:(i + 1) * self.batch_size]]
+                if not interMode:
+                    tags = [data['tags'][idx] for idx in order[i * self.batch_size:(i + 1) * self.batch_size]]
+
+            # batch length
+            batch_len = len(sentences)
+
+            # compute length of longest sentence in batch
+            batch_max_subwords_len = max([len(s[0]) for s in sentences])
+            max_subwords_len = min(batch_max_subwords_len, self.max_len)
+            max_token_len = 0
+
+            # prepare a numpy array with the data, initialising the data with pad_idx
+            batch_data = self.token_pad_idx * np.ones((batch_len, max_subwords_len))
+            batch_token_starts = []
+
+            # copy the data to the numpy array
+            for j in range(batch_len):
+                cur_subwords_len = len(sentences[j][0])
+                if cur_subwords_len <= max_subwords_len:
+                    batch_data[j][:cur_subwords_len] = sentences[j][0]
+                else:
+                    batch_data[j] = sentences[j][0][:max_subwords_len]
+                token_start_idx = sentences[j][-1]
+                token_starts = np.zeros(max_subwords_len)
+                token_starts[[idx for idx in token_start_idx if idx < max_subwords_len]] = 1
+                batch_token_starts.append(token_starts)
+                max_token_len = max(int(sum(token_starts)), max_token_len)
+
+            if not interMode:
+                batch_tags = self.tag_pad_idx * np.ones((batch_len, max_token_len))
+                for j in range(batch_len):
+                    cur_tags_len = len(tags[j])
+                    if cur_tags_len <= max_token_len:
+                        batch_tags[j][:cur_tags_len] = tags[j]
+                    else:
+                        batch_tags[j] = tags[j][:max_token_len]
+
+            # since all data are indices, we convert them to torch LongTensors
+            batch_data = torch.tensor(batch_data, dtype=torch.long)
+            batch_token_starts = torch.tensor(batch_token_starts, dtype=torch.long)
+            if not interMode:
+                batch_tags = torch.tensor(batch_tags, dtype=torch.long)
+
+            # shift tensors to GPU if available
+            batch_data, batch_token_starts = batch_data.to(self.device), batch_token_starts.to(self.device)
+            if not interMode:
+                batch_tags = batch_tags.to(self.device)
+                yield batch_data, batch_token_starts, batch_tags
+            else:
+                yield batch_data, batch_token_starts
 
     def load_train(self):
-        return self._train_iter
-        pass
-
-    def load_test(self):
-        return self._test_iter
-        pass
+        return self.train_data
 
     def load_valid(self):
-        return self._valid_iter
-        pass
+        return self.valid_data
 
+    def load_test(self):
+        return self.test_data
 
 
 if __name__ == '__main__':
-    config_file = 'bert_oppo_dialogue_config.yml'
+    config_file = 'bert_ce_config.yml'
     import dynamic_yaml
 
     # Device
@@ -111,11 +215,6 @@ if __name__ == '__main__':
 
     with open(config_file, mode='r', encoding='UTF-8') as f:
         config = dynamic_yaml.load(f)
-    data_loader = SequenceDataLoader(config)
-    for batch, batch_data in enumerate(data_loader.load_train(), 0):
-        text = batch_data.text
-        print("batch = {}".format(batch))
-        for idx, txt in enumerate(text, 0):
-            print("idx={},text ={} ".format(idx, txt))
-
+    data_loader = BertDataLoader(config)
+    datas = data_loader.load_data()
     pass

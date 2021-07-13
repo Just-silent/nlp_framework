@@ -16,7 +16,7 @@ class ODConfig(CommonConfig):
         pass
 
     def load_config(self):
-        with pkg_resources.resource_stream("sequence.oppo_dialogue", self._config_file) as res:
+        with pkg_resources.resource_stream("sequence.bert_oppo_dialogue", self._config_file) as res:
             config = dynamic_yaml.load(res)
         self._config.update(config)
         return self._config
@@ -25,5 +25,5 @@ class ODConfig(CommonConfig):
 
 if __name__ == '__main__':
     config_file = 'bert_oppo_dialogue_config.yml'
-    ee_config = EmoConfig(config_file)
+    ee_config = ODConfig(config_file)
     config = ee_config.load_config()

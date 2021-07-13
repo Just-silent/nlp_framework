@@ -11,7 +11,7 @@ import torch.nn as nn
 from torch.nn import Module
 from torchcrf import CRF
 from torch.nn.utils.rnn import pad_sequence
-from transformers.modeling_bert import BertModel, BertPreTrainedModel
+from transformers import BertModel, BertPreTrainedModel
 
 
 class CommonModel(BaseModel, ABC):

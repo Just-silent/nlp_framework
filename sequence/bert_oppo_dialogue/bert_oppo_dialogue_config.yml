@@ -11,10 +11,12 @@ project:
   test_name: 'Transformer_lr_0.003'
   dir:
     work: '{home.dir}/{project.name}/{project.test_name}'
+  seed: 19980603
 
 pretrained_models:
   name: 'bert_base_chinese'
   dir: '{home.dir}/common/pretrained_models/{pretrained_models.name}'
+  full_finetuning: True
   is_use: False
 
 data:
@@ -26,10 +28,16 @@ data:
 
   vocab_path: '{pretrained_models.dir}/vocab.txt'
 
+  max_len: 0
   num_vocab: 20000
   num_tag: 100
   batch_size: 32
   batch_first: True
+
+  token_pad_idx: 1
+  tag_pad_idx: 1
+
+  shuffle: True
 
   train_batch_size: 8
   train_shuffle: True
@@ -51,6 +59,7 @@ model:
   dropout: 0.2
   nhead: 16
   num_encoder_layers: 12
+  label_pad: True
 
 loss:
   alpha: 1.0

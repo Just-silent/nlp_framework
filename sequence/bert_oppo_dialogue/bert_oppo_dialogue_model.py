@@ -8,8 +8,7 @@ import random
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn import Transformer
-from fastNLP import seq_len_to_mask
+from transformers import *
 from common.model.common_model import CommonModel
 
 RANDOM_SEED = 2020
@@ -33,6 +32,7 @@ class ODModel(CommonModel):
     def __init__(self, seq_config_file):
         super(ODModel, self).__init__(seq_config_file)
         self._config = seq_config_file
+        self.bert = BertModel(self._config)
         self.embedding = nn.Embedding(self._config.data.num_vocab, self._config.model.dim_embedding)
         self.lstm_encoder = nn.LSTM(self._config.model.dim_embedding, self._config.model.dim_hidden // 2,
                                     num_layers=self._config.model.num_layer,

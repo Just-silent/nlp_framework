@@ -15,7 +15,7 @@ from torch.optim.lr_scheduler import StepLR
 from sequence.event_extract.utils import Tool
 from common.runner.common_runner import CommonRunner
 from sequence.bert_oppo_dialogue.bert_oppo_dialogue_config import ODConfig
-from sequence.bert_oppo_dialogue.bert_oppo_dialogue_data import SequenceDataLoader
+from sequence.bert_oppo_dialogue.bert_oppo_dialogue_data import BertDataLoader
 from sequence.bert_oppo_dialogue.bert_oppo_dialogue_evaluator import ODEvaluator
 from sequence.bert_oppo_dialogue.bert_oppo_dialogue_model import ODModel
 from sequence.bert_oppo_dialogue.bert_oppo_dialogue_loss import SequenceCRFLoss
@@ -41,7 +41,7 @@ class EmoRunner(CommonRunner):
         pass
 
     def _build_data(self):
-        self._dataloader = SequenceDataLoader(self._config)
+        self._dataloader = BertDataLoader(self._config)
 
         self.word_vocab = self._dataloader.word_vocab
         self.tag_vocab = self._dataloader.tag_vocab
@@ -54,13 +54,12 @@ class EmoRunner(CommonRunner):
         self._valid_dataloader = self._dataloader.load_valid()
         self._test_dataloader = self._dataloader.load_test()
 
-        train_max_len = max([len(example.enc_input) for example in self._train_dataloader.dataset.examples])
-        valid_max_len = max([len(example.enc_input) for example in self._valid_dataloader.dataset.examples])
-        self.max_seq_len = max(train_max_len, valid_max_len)
+        self.max_seq_len = self._config.data.max_len
         pass
 
     def _build_model(self):
-        self._model = ODModel(self._config).to(self._config.device)
+        self._model = ODModel.from_pretrained(self._config.pretrained_models.dir,
+                      num_labels=self._config.model.ntag).to(self._config.device)
         pass
 
     def _build_loss(self):
@@ -68,8 +67,19 @@ class EmoRunner(CommonRunner):
         pass
 
     def _build_optimizer(self):
-        self._optimizer = optim.SGD(self._model.parameters(), lr=float(self._config.learn.learning_rate),
-                                    momentum=self._config.learn.momentum)
+        if self._config.pretrained_models.full_finetuning:
+            param_optimizer = list(self._model.named_parameters())
+            no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
+            optimizer_grouped_parameters = [
+                {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
+                 'weight_decay': self._config.learn.weight_decay},
+                {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
+                 'weight_decay': 0.0}
+            ]
+        else:
+            param_optimizer = list(self._model.classifier.named_parameters())
+            optimizer_grouped_parameters = [{'params': [p for n, p in param_optimizer]}]
+        self._optimizer = optim.AdamW(optimizer_grouped_parameters, lr=float(self._config.learn.learning_rate))
         self._scheduler = StepLR(self._optimizer, step_size=2000, gamma=0.1)
 
     def _build_evaluator(self):

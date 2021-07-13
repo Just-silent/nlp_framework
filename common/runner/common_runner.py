@@ -1,6 +1,7 @@
 import csv
 import os
 import time
+import shutil
 from abc import ABC
 from datetime import datetime
 from pathlib import Path
@@ -37,13 +38,24 @@ class CommonRunner(BaseRunner, ABC):
 
         self._optimizer = None
         # 将train_fmt移到build前，若不适合，方便在build内进行更改
-        self._train_fmt = "train: episode={:4d}, global_step={:4d},  " \
+        self._train_fmt = "\n train: episode={:4d}, global_step={:4d},  " \
                           "batch_size={:4d}, batch_loss={:.4f}, elapsed={:.4f}"
 
         self._build()
 
+        #   for batch_display
+        if self._config.learn.batch_display == 0:
+            self._config.learn.batch_display = len(
+                self._train_dataloader.dataset.examples) / self._config.data.train_batch_size // self._config.learn.n_divide_display
+
         #   for global_step
         self.global_step = 0
+        self.global_valid_step = 0
+        self.epoch_loss = 0
+
+        #   for parameter
+        dir_parameter = self._config.learn.dir.parameter
+        Path(dir_parameter).mkdir(parents=True, exist_ok=True)
 
         #   for log
         dir_log = self._config.learn.dir.log
@@ -126,23 +138,35 @@ class CommonRunner(BaseRunner, ABC):
             self._summary_writer.add_scalar(
                 predix + "/" + result_name, result_value, global_step=step)
 
+    def _write_yml(self):
+        source_path = ''
+        for p in os.listdir('./'):
+            if '.yml' in p:
+                source_path = './' + p
+        shutil.copy(source_path, self._config.learn.dir.parameter)
+        pass
+
     def train(self):
-        # switch to train mode
+        # self._load_checkpoint()
         self._model.train()
         print("training...")
         f_max = 0.0
+        self._write_yml()
         with open(self._valid_log_filepath, mode='w') as valid_log_file:
             valid_log_writer = csv.writer(valid_log_file, delimiter=',')
             valid_log_writer.writerow(self._valid_log_fields)
             for episode in range(self._config.learn.episode):
                 self._train_epoch(episode)
                 f_value = self._valid(episode, valid_log_writer)
+                self.global_valid_step += 1
+                self._summary_writer.add_scalar('valid/P', f_value, self.global_valid_step)
+                self._summary_writer.add_scalar('train/epoch_liss', self.epoch_loss, self.global_valid_step)
+                self.epoch_loss = 0
+                self._summary_writer.flush()
                 if f_value > f_max:
                     self._save_checkpoint(episode)
                     print("The best model has been saved and its score is {:.4f}".format(f_value))
                     f_max = f_value
-                else:
-                    print("The score of the best model is {:.4f}".format(f_max))
                 # self._display_result(episode)
                 self._scheduler.step()
         self._summary_writer.close()
@@ -152,10 +176,11 @@ class CommonRunner(BaseRunner, ABC):
         epoch_start = time.time()
         self._model.train()
         for dict_input in tqdm(self._train_dataloader, desc="training"):
-            input = {}
-            input['text'] = dict_input.text
-            input['tag'] = dict_input.tag
-            self.training = True
+            input = {
+                'enc_input': dict_input.enc_input,
+                'dec_input': dict_input.dec_input,
+                'tag': dict_input.tag
+            }
             dict_output = self._model(input)
             dict_loss = self._loss(dict_output)
 
@@ -166,8 +191,9 @@ class CommonRunner(BaseRunner, ABC):
             self._optimizer.step()  # apply gradients
             self.global_step += 1
             self._write_summary(step=self.global_step, result=dict_loss)
+            self.epoch_loss += batch_loss
             if self.global_step % self._config.learn.batch_display == 0:
-                # summary_writer.flush()
+                self._summary_writer.flush()
                 elapsed = time.time() - epoch_start
                 print(self._train_fmt.format(
                     episode + 1, self.global_step,

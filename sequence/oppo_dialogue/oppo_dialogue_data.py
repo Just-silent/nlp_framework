@@ -13,10 +13,6 @@ from sequence.oppo_dialogue.oppo_dialogue_dataset import ODDataset
 from common.data.common_data_loader import CommonDataLoader
 
 
-def tokenizer(token):
-    return [k for k in token]
-
-
 START_TAG = "<START>"
 STOP_TAG = "<STOP>"
 PAD_TAG = "<PAD>"
@@ -27,17 +23,18 @@ class SequenceDataLoader(CommonDataLoader):
 
     def __init__(self, data_config):
         super(SequenceDataLoader, self).__init__(data_config)
+        self.tokenizer = BertTokenizer.from_pretrained(data_config.pretrained_models.dir, do_lower_case=False)
         self._config = data_config
         self.__build_field()
         self._load_data()
         pass
 
     def __build_field(self):
-        self.ENC_INPUT = Field(sequential=True, use_vocab=True, lower=True, tokenize=tokenizer, include_lengths=True,
+        self.ENC_INPUT = Field(sequential=True, use_vocab=True, lower=True, tokenize=self.tokenizer, include_lengths=True,
                           batch_first=self._config.data.batch_first, pad_token='[pad]', unk_token='[unk]')
-        self.DEC_INPUT = Field(sequential=True, use_vocab=True, lower=True, tokenize=tokenizer, include_lengths=True,
+        self.DEC_INPUT = Field(sequential=True, use_vocab=True, lower=True, tokenize=self.tokenizer, include_lengths=True,
                                batch_first=self._config.data.batch_first, pad_token='[pad]', unk_token='[unk]')
-        self.TAG = Field(sequential=True, use_vocab=True, lower=True, tokenize=tokenizer, is_target=True,
+        self.TAG = Field(sequential=True, use_vocab=True, lower=True, tokenize=self.tokenizer, is_target=True,
                          batch_first=self._config.data.batch_first, pad_token='[pad]', unk_token='[unk]')
         self._fields = [
             ('enc_input', self.ENC_INPUT), ('dec_input', self.DEC_INPUT), ('tag', self.TAG)
@@ -70,8 +67,10 @@ class SequenceDataLoader(CommonDataLoader):
         self.ENC_INPUT.build_vocab(*dataset)
         self.DEC_INPUT.build_vocab(*dataset)
         self.TAG.build_vocab(*dataset)
-        self.DEC_INPUT.vocab = self.ENC_INPUT.vocab
-        self.TAG.vocab = self.ENC_INPUT.vocab
+        self.DEC_INPUT.vocab.itos = self.tokenizer.ids_to_tokens
+        self.DEC_INPUT.vocab.stoi = self.tokenizer.ids_to_tokens.items()
+        self.TAG.vocab.itos = self.tokenizer.ids_to_tokens
+        self.TAG.vocab.stoi = self.tokenizer.ids_to_tokens.items()
         self.word_vocab = self.ENC_INPUT.vocab
         self.tag_vocab = self.ENC_INPUT.vocab
         pass
