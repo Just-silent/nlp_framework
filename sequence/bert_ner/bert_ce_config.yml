@@ -4,8 +4,8 @@ home:
   dir: 'D://workspace'
 #  dir: '//home//admin//jupyter//workspace'
 
-device: 'cpu'
-#device: 'cuda:0'
+#device: 'cpu'
+device: 'cuda:0'
 
 # Shared for multiple modules in the project
 project:
@@ -21,11 +21,11 @@ pretrained_models:
   is_use: False
 
 data:
-  name: 'email'
+  name: 'resume'
   base_dir: '{home.dir}//data'
-  train_path: '{data.base_dir}//{data.name}//seq_train.conll'
-  valid_path: '{data.base_dir}//{data.name}//seq_valid.conll'
-  test_path: '{data.base_dir}//{data.name}//seq_valid.conll'
+  train_path: '{data.base_dir}//{data.name}//train.char.bmes'
+  valid_path: '{data.base_dir}//{data.name}//test.char.bmes'
+  test_path: '{data.base_dir}//{data.name}//dev.char.bmes'
 
   vocab_path: '{pretrained_models.dir}//vocab.txt'
 

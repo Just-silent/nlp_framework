@@ -103,8 +103,8 @@ class CrfDecoder(Module):
 
     def forward(self, emission, tag, crf_mask):
         crf_output = {
-            'crf_loss':None,
-            'output':None
+            'crf_loss': None,
+            'output': None
         }
         if self.training:
             crf_output['crf_loss'] = -self.crflayer(emission, tag, mask=crf_mask)

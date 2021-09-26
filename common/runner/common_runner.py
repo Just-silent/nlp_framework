@@ -147,7 +147,7 @@ class CommonRunner(BaseRunner, ABC):
         pass
 
     def train(self):
-        # self._load_checkpoint()
+        self._load_checkpoint()
         self._model.train()
         print("training...")
         f_max = 0.0

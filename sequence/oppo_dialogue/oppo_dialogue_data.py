@@ -30,11 +30,11 @@ class SequenceDataLoader(CommonDataLoader):
         pass
 
     def __build_field(self):
-        self.ENC_INPUT = Field(sequential=True, use_vocab=True, lower=True, tokenize=self.tokenizer, include_lengths=True,
+        self.ENC_INPUT = Field(sequential=True, use_vocab=True, lower=True, tokenize=None, include_lengths=True,
                           batch_first=self._config.data.batch_first, pad_token='[pad]', unk_token='[unk]')
-        self.DEC_INPUT = Field(sequential=True, use_vocab=True, lower=True, tokenize=self.tokenizer, include_lengths=True,
+        self.DEC_INPUT = Field(sequential=True, use_vocab=True, lower=True, tokenize=None, include_lengths=True,
                                batch_first=self._config.data.batch_first, pad_token='[pad]', unk_token='[unk]')
-        self.TAG = Field(sequential=True, use_vocab=True, lower=True, tokenize=self.tokenizer, is_target=True,
+        self.TAG = Field(sequential=True, use_vocab=True, lower=True, tokenize=None, is_target=True,
                          batch_first=self._config.data.batch_first, pad_token='[pad]', unk_token='[unk]')
         self._fields = [
             ('enc_input', self.ENC_INPUT), ('dec_input', self.DEC_INPUT), ('tag', self.TAG)
@@ -67,10 +67,10 @@ class SequenceDataLoader(CommonDataLoader):
         self.ENC_INPUT.build_vocab(*dataset)
         self.DEC_INPUT.build_vocab(*dataset)
         self.TAG.build_vocab(*dataset)
-        self.DEC_INPUT.vocab.itos = self.tokenizer.ids_to_tokens
-        self.DEC_INPUT.vocab.stoi = self.tokenizer.ids_to_tokens.items()
-        self.TAG.vocab.itos = self.tokenizer.ids_to_tokens
-        self.TAG.vocab.stoi = self.tokenizer.ids_to_tokens.items()
+        self.DEC_INPUT.vocab.itos = self.ENC_INPUT.vocab.itos
+        self.DEC_INPUT.vocab.stoi = self.ENC_INPUT.vocab.stoi
+        self.TAG.vocab.itos = self.ENC_INPUT.vocab.itos
+        self.TAG.vocab.stoi = self.ENC_INPUT.vocab.stoi
         self.word_vocab = self.ENC_INPUT.vocab
         self.tag_vocab = self.ENC_INPUT.vocab
         pass

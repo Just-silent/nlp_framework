@@ -1,7 +1,7 @@
 # shared for multiple projects in this machine, raw data, read only
 
 home:
-  dir: '/home/zutnlp/workspace/zutnlp_research/'
+  dir: 'D:\workspace'
 
 device: 'cuda:0'
 
@@ -31,7 +31,7 @@ data:
   batch_size: 32
   batch_first: True
 
-  train_batch_size: 8
+  train_batch_size: 2
   train_shuffle: True
 
   test_batch_size: 1
@@ -68,7 +68,7 @@ learn:
   weight_decay: 1.0e-5
   n_divide_display: 2
   batch_display: 0
-  episode: 20
+  episode: 5
   dir:
     work: "{project.dir.work}//{model.name}"
     log: '{learn.dir.work}/log'

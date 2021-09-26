@@ -232,7 +232,7 @@ if __name__ == '__main__':
     config_file = 'bert_ce_config.yml'
 
     runner = Bert_Runner(config_file)
-    # runner.train()
+    runner.train()
     runner.valid()
     # runner.test()
     # runner.predict_test()

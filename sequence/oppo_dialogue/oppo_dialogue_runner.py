@@ -147,17 +147,18 @@ class EmoRunner(CommonRunner):
             memory = self._model.transformer.encoder(enc_embedding)
             terminal = False
             before_sentence = dict_input.dec_input[0]
-            outputs = []
+            outputs = None
             while not terminal:
-                dec_embedding = self._model.embedding(before_sentence)
+                dec_embedding = self._model.pos_encoder(self._model.embedding(before_sentence))
                 dec_outputs = self._model.transformer.decoder(dec_embedding.transpose(0, 1), memory.transpose(0, 1)).transpose(0, 1)
                 projected = self._model.linner(dec_outputs)
                 prob = projected.argmax(dim=-1)
                 next_word = prob.data[-1][-1]
-                outputs.append(next_word)
+                # outputs.append(next_word)
                 before_sentence = torch.cat([before_sentence, next_word.unsqueeze(0).unsqueeze(0)], dim=-1)
                 # before_sentence = next_word.unsqueeze(0).unsqueeze(0)
                 if next_word == self.word_vocab.stoi['[sep]']:
+                    outputs = prob.squeeze()
                     terminal = True
             print('原问题：', ''.join([self.word_vocab.itos[index] for index in dict_input.enc_input[0][0]]))
             print('新问题：', ''.join([self.word_vocab.itos[index] for index in outputs]))
@@ -198,7 +199,7 @@ if __name__ == '__main__':
 
     runner = EmoRunner(config_file)
     runner.train()
-    # runner.valid()
-    # runner.test()
+    runner.valid()
+    runner.test()
     # runner.predict_test()
     pass

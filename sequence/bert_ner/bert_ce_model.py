@@ -52,16 +52,7 @@ class BertForSequenceTagging(BertPreTrainedModel):
 		loss_mask = None
 		outputs = {}
 		if labels is not None:
-			loss_mask = labels.gt(-1)
-			# loss_fct = CrossEntropyLoss()
-			# # Only keep active parts of the loss
-			# if loss_mask is not None:
-			# 	active_loss = loss_mask.view(-1) == 1
-			# 	active_logits = logits.view(-1, self.num_labels)[active_loss]
-			# 	active_labels = labels.view(-1)[active_loss]
-			# 	loss = loss_fct(active_logits, active_labels)
-			# else:
-			# 	loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+			loss_mask = labels.ge(1)
 
 		crf_output = self.crf_decoder(logits, labels, loss_mask)
 		outputs['loss_batch'] = crf_output['crf_loss']
