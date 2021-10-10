@@ -2,7 +2,11 @@
 # @Author   : Just-silent
 # @time     : 2020/9/18 8:17
 
-from transformers.modeling_bert import *
+import torch
+import torch.nn as nn
+
+from transformers import *
+
 from torch.nn.utils.rnn import pad_sequence
 
 from common.model.common_model import CrfDecoder
@@ -40,7 +44,7 @@ class TextSimilarity(BertPreTrainedModel):
 		loss = None
 		outputs = {}
 		if labels is not None:
-			loss_fct = CrossEntropyLoss()
+			loss_fct = nn.CrossEntropyLoss()
 			if self.training:
 				loss = loss_fct(logits.view(-1, 2), labels.view(-1))
 

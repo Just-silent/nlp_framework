@@ -2,8 +2,10 @@
 # @Author   : Just-silent
 # @time     : 2020/9/18 8:17
 
-from transformers.modeling_bert import *
-from torch.nn.utils.rnn import pad_sequence
+import torch
+import torch.nn as nn
+
+from transformers import *
 
 from common.model.common_model import CrfDecoder
 
@@ -43,7 +45,7 @@ class IntentionClassification(BertPreTrainedModel):
 		outputs = {}
 		if labels is not None:
 			# loss_mask = labels.gt(-1)
-			loss_fct = CrossEntropyLoss()
+			loss_fct = nn.CrossEntropyLoss()
 			# # Only keep active parts of the loss
 			# if loss_mask is not None:
 			# 	active_loss = loss_mask.view(-1) == 1
