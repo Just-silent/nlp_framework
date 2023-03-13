@@ -3,8 +3,7 @@
 # init time :2021/4/12 9:08
 # file      :event_extract_runner.py
 # IDE       :PyCharm
-
-
+import pandas as pd
 import torch
 import random
 import warnings
@@ -12,6 +11,7 @@ import numpy as np
 import torch.optim as optim
 
 from tqdm import tqdm
+from tool import *
 from common.util.utils import timeit
 from sequence.bert_ner.utils import Tool
 from torch.optim.lr_scheduler import StepLR
@@ -191,49 +191,103 @@ class Bert_Runner(BertCommonRunner):
     def _display_result(self, episode):
         pass
 
-    def predict_test(self, text):
+    def predict_test(self):
         self._load_checkpoint()
         print('finished load ')
         self._model.eval()
         self.training = False
-        # while True:
-            # print('请输入一段话：', end='')
-            # text = input()
-        text_list = ['[CLS]']
-        text_list.extend([c for c in text])
-        ids = self.dataloader.tokenizer.convert_tokens_to_ids(text_list)
-        token_starts = [0]
-        token_starts.extend([1]*len(text))
-        batch_data = torch.tensor(ids, dtype=torch.long).unsqueeze(0).repeat(self._config.data.batch_size, 1).to(self._config.device)
-        batch_token_starts = torch.tensor(token_starts, dtype=torch.long).unsqueeze(0).repeat(self._config.data.batch_size, 1).to(self._config.device)
-        input1 = {}
-        input1['input_ids'] = batch_data
-        input1['labels'] = None
-        input1['attention_mask'] =  batch_data.gt(0)
-        input1['input_token_starts'] = batch_token_starts
-        tag_list = None
-        if self._config.device=='cpu':
-            if self._config.model.is_crf:
-                tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'][0]]
+        texts = []
+        pred_tags = []
+        ori_tags = []
+        f = open(self._config.data.test_path, 'r', encoding='utf-8')
+        texts = f.readlines()
+        new_texts = []
+        for text in tqdm(texts):
+            text = text.strip()
+            text_list = ['[CLS]']
+            text_list.extend([c for c in text])
+            ids = self.dataloader.tokenizer.convert_tokens_to_ids(text_list)
+            token_starts = [0]
+            token_starts.extend([1]*len(text))
+            batch_data = torch.tensor(ids, dtype=torch.long).unsqueeze(0).repeat(self._config.data.batch_size, 1).to(self._config.device)
+            batch_token_starts = torch.tensor(token_starts, dtype=torch.long).unsqueeze(0).repeat(self._config.data.batch_size, 1).to(self._config.device)
+            input1 = {}
+            input1['input_ids'] = batch_data
+            input1['labels'] = None
+            input1['attention_mask'] =  batch_data.gt(0)
+            input1['input_token_starts'] = batch_token_starts
+            tag_list = None
+            if self._config.device=='cpu':
+                if self._config.model.is_crf:
+                    tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'][0]]
+                else:
+                    tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'].numpy().tolist()[0]]
             else:
-                tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'].numpy().tolist()[0]]
-        else:
-            if self._config.model.is_crf:
-                tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'][0]]
-            else:
-                tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'].cpu().numpy().tolist()[0]]
-        pred_words = self._tool.get_result_by_sentence_tag(text_list[1:], tag_list)
-        print(tag_list)
-        print(pred_words)
-        return pred_words
+                if self._config.model.is_crf:
+                    tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'][0]]
+                else:
+                    tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'].cpu().numpy().tolist()[0]]
+            pred_words = self._tool.get_result_by_sentence_tag(text_list[1:], tag_list)
+            print(tag_list)
+            print(pred_words)
+            result = get_defect(text, tag_list)
+            result = ' '.join(result).strip()
+            pred_tags.append(result)
+            new_texts.append(text)
+        data = pd.DataFrame({'问题描述': new_texts, '三级故障描述模型结果': pred_tags})
+        data.to_csv(self._config.data.test_result_save_path, index=False, encoding='utf_8_sig')
+
+    def predict_test_valid(self):
+        self._load_checkpoint()
+        print('finished load ')
+        self._model.eval()
+        self.training = False
+        texts = []
+        tags = []
+        data = pd.read_excel(self._config.data.test_result_save_path)
+        for i in range(data.shape[0]):
+            text = data.iloc[i, 2]
+            if text is not np.nan:
+                text = text.strip()
+                text_list = ['[CLS]']
+                text_list.extend([c for c in text])
+                ids = self.dataloader.tokenizer.convert_tokens_to_ids(text_list)
+                token_starts = [0]
+                token_starts.extend([1]*len(text))
+                batch_data = torch.tensor(ids, dtype=torch.long).unsqueeze(0).repeat(self._config.data.batch_size, 1).to(self._config.device)
+                batch_token_starts = torch.tensor(token_starts, dtype=torch.long).unsqueeze(0).repeat(self._config.data.batch_size, 1).to(self._config.device)
+                input1 = {}
+                input1['input_ids'] = batch_data
+                input1['labels'] = None
+                input1['attention_mask'] =  batch_data.gt(0)
+                input1['input_token_starts'] = batch_token_starts
+                tag_list = None
+                if self._config.device=='cpu':
+                    if self._config.model.is_crf:
+                        tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'][0]]
+                    else:
+                        tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'].numpy().tolist()[0]]
+                else:
+                    if self._config.model.is_crf:
+                        tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'][0]]
+                    else:
+                        tag_list = [self.idx2tag[idx] for idx in self._model(input1)['outputs'].cpu().numpy().tolist()[0]]
+                pred_words = self._tool.get_result_by_sentence_tag(text_list[1:], tag_list)
+                print(tag_list)
+                print(pred_words)
+                result = get_defect(text, tag_list)
+                result = ' '.join(result).strip()
+                data.iloc[i, 4] = result
+        data.to_excel(self._config.data.test_result_save_path, index=False, encoding='utf_8_sig')
 
 
 if __name__ == '__main__':
     config_file = 'bert_ce_config.yml'
 
     runner = Bert_Runner(config_file)
-    runner.train()
-    runner.valid()
+    # runner.train()
+    # runner.valid()
     # runner.test()
     # runner.predict_test()
+    runner.predict_test_valid()
     pass

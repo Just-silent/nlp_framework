@@ -226,6 +226,6 @@ if __name__ == '__main__':
     runner = IntentionClassificationRunner(config_file)
     runner.train()
     runner.valid()
-    runner.test()
-    runner.predict_test()
+    # runner.test()
+    # runner.predict_test()
     pass

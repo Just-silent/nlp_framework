@@ -43,4 +43,3 @@ class EventExteactModel(CommonModel):
         else:
             dict_outputs['outputs'] = self.crflayer.decode(emissions)
         return dict_outputs
-        pass

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Author   : Just-silent
 # @time     : 2020/9/18 8:16
-
+import pandas as pd
 import torch
 import random
 import numpy as np
@@ -38,15 +38,12 @@ class IntentionClassificationDataLoader(object):
 
     def load_tags(self):
         tags = []
-        wb = openpyxl.load_workbook(self._config.data.train_path)
-        sheetnames = wb.sheetnames
-        ws = wb[sheetnames[0]]
-        max_row = ws.max_row
-        for i in range(max_row-2):
-            line_num = i+2
-            if ws.cell(line_num, 5).value is None:
-                break
-            tags.append(ws.cell(line_num, 5).value.strip())
+        data = pd.read_excel(self._config.data.train_path)
+        ori_tags = list(data['二级分类'].values)
+        for tag in ori_tags:
+            if tag is not np.nan:
+                tag = tag.strip()
+                tags.append(tag)
         result = []
         if self._config.model.label_pad:
             result = ['PAD']
@@ -114,16 +111,19 @@ class IntentionClassificationDataLoader(object):
         max_row = ws.max_row
         for i in range(max_row - 2):
             line_num = i + 2
-            if ws.cell(line_num, 3).value is None:
-                break
-            sentence = ws.cell(line_num, 3).value.strip()
-            tag = self.tag2idx[ws.cell(line_num, 5).value.strip()]
-            subwords = list(map(self.tokenizer.tokenize, sentence))
-            subword_lengths = list(map(len, subwords))
-            subwords = ['[CLS]'] + [item for indices in subwords for item in indices]
-            token_start_idxs = 1 + np.cumsum([0] + subword_lengths[:-1])
-            sentences.append((self.tokenizer.convert_tokens_to_ids(subwords), token_start_idxs))
-            tags.append(tag)
+            if ws.cell(line_num, 2).value is not None and ws.cell(line_num, 3).value is not None:
+                # if ws.cell(line_num, 5).value is not None:
+                sentence = ws.cell(line_num, 3).value.strip()
+                # sentence = ws.cell(line_num, 5).value.strip()
+                # if ws.cell(line_num, 5).value is not None:
+                #     sentence = ws.cell(line_num, 3).value.strip() + ws.cell(line_num, 5).value.strip()
+                tag = self.tag2idx[ws.cell(line_num, 2).value.strip()]
+                subwords = list(map(self.tokenizer.tokenize, sentence))
+                subword_lengths = list(map(len, subwords))
+                subwords = ['[CLS]'] + [item for indices in subwords for item in indices]
+                token_start_idxs = 1 + np.cumsum([0] + subword_lengths[:-1])
+                sentences.append((self.tokenizer.convert_tokens_to_ids(subwords), token_start_idxs))
+                tags.append(tag)
         data['tags'] = tags
         data['data'] = sentences
         data['size'] = len(sentences)
@@ -239,5 +239,5 @@ if __name__ == '__main__':
     with open(config_file, mode='r', encoding='UTF-8') as f:
         config = dynamic_yaml.load(f)
     data_loader = IntentionClassificationDataLoader(config)
-    datas = data_loader.cut_data()
+    # datas = data_loader.cut_data()
     pass

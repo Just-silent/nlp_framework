@@ -1,15 +1,15 @@
 # shared for multiple projects in this machine, raw data, read only
 
 home:
-  dir: 'D:/workspace'
-#  dir: '//home//admin//jupyter//workspace'
+#  dir: 'C:/workspace'
+  dir: '/workspace/xingpengju_workspace/workspace'
 
-device: 'cpu'
-#device: 'cuda:0'
+#device: 'cpu'
+device: 'cuda:0'
 
 # Shared for multiple modules in the project
 project:
-  name: 'email'
+  name: 'bert_classification'
   dir:
     work: '{home.dir}/{project.name}'
   seed: 19980603
@@ -21,12 +21,12 @@ pretrained_models:
   is_use: False
 
 data:
-  name: 'email'
-  base_dir: '{home.dir}//data'
-  ori_path: '{data.base_dir}//{data.name}//classification.xlsx'
-  train_path: '{data.base_dir}//{data.name}//classification_train.xlsx'
-  valid_path: '{data.base_dir}//{data.name}//classification_valid.xlsx'
-  test_path: '{data.base_dir}//{data.name}//classification_valid.xlsx'
+  name: 'qirui/defect/classification'
+  base_dir: '{home.dir}/data'
+  ori_path: '{data.base_dir}/{data.name}/故障编码.xlsx'
+  train_path: '{data.base_dir}/{data.name}/train_clean.xlsx'
+  valid_path: '{data.base_dir}/{data.name}/valid_clean.xlsx'
+  test_path: '{data.base_dir}/{data.name}/valid_clean.xlsx'
 
   vocab_path: '{pretrained_models.dir}//vocab.txt'
 
@@ -39,7 +39,7 @@ data:
 
   num_vocab: 20000
   num_tag: 8
-  batch_size: 4
+  batch_size: 16
   batch_first: True
 
   train_shuffle: True
@@ -76,7 +76,7 @@ learn:
   momentum: 0.9
   weight_decay: 1.0e-2
   batch_display: 20
-  episode: 10
+  episode: 20
   dir:
     work: "{project.dir.work}/{model.name}"
     log: '{learn.dir.work}/log/'

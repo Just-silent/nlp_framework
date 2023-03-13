@@ -39,8 +39,8 @@ class BertDataLoader(object):
         tags = []
         with open(self._config.data.train_path, 'r', encoding='utf-8') as file:
             for line in file.readlines():
-                if line!='\n':
-                    tags.append(line.strip().split()[1])
+                if line != '\n':
+                    tags.append(line[:-1][2:])
         result = []
         if self._config.model.label_pad:
             result = ['PAD']
@@ -65,7 +65,7 @@ class BertDataLoader(object):
         sentence = []
         ts = []
         for line in tqdm(file.readlines()):
-            if line=='\n':
+            if line == '\n':
                 if sentence == []:
                     pass
                 else:
@@ -79,7 +79,7 @@ class BertDataLoader(object):
                     sentence = []
                     ts = []
             else:
-                char, t = line.strip().split()
+                char, t = line[:-1][0], line[:-1][2:]
                 sentence.append(char)
                 ts.append(t)
         data['tags'] = tags

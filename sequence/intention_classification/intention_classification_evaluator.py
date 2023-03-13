@@ -29,7 +29,7 @@ class IntentionClassificationEvaluator(CommonSeqEvaluator):
         self._true_list.extend(target)
 
     def get_eval_output(self):
-        nums = len(self._true_list)
+        nums = len(self._pred_list)
         true_nums = 0
         for i in range(nums):
             if self._true_list[i]==self._pred_list[i]:

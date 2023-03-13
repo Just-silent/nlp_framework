@@ -16,9 +16,9 @@ from sequence.intention_classification.intention_classification_runner import In
 class Neo4jImport():
     def __init__(self):
         self.graf = Graph(
-            "http://172.22.179.237:7474/",
+            "http://172.0.0.1:7474/",
             user="neo4j",
-            password="123456"
+            password="0330"
         )
         self.email_dict = {}
         self.macth_node('普通附件', '添加')
